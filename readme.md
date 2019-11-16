@@ -302,7 +302,7 @@ module.exports = handleUserRouter
    	req.path = url.split('?')[0]
    
    	//解析 query
-   	1req.query = querystring.parse(url.split('?')[1])
+   	req.query = querystring.parse(url.split('?')[1])
    
    	// const resData = {
    	// 	name: 'zhang',
