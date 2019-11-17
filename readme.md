@@ -1,4 +1,4 @@
-# Node.js搭建博客
+Node.js搭建博客
 
 ## 开发接口（不用框架）
 
@@ -851,21 +851,203 @@ module.exports = {
 - node,js 开发博客项目的接口（未连接数据库，未登录使用）
 - 为何要将 router 和 controller 分开？
 
-#### 补充：路由和 API
+- 路由和  API 区别：
+  - API ：前后端、不同端（子系统）之间对接的通用术语
+  - 路由：系统内部的接口定义，是 API 的一部分
 
-## 使用数据库
+## 数据库与登录验证
 
-### 使用cookie
+### MySQL安装
 
-### redis
+**讲解步骤：**
 
-### stream
+1. MySQL 的介绍、安装和使用
 
-### 日志
+2. node.js 连接 MySQL
 
-### 攻击
+3. API 连接 MySQL
 
-## 使用express框架开发博客
+为什么使用MySQL？
+
+- MySQL 最常用，有专人运维
+- MySQL 有问题可以随时查到
+- MySQL 本身是复杂的，本课只讲使用
+
+#### MySQL 介绍：
+
+- web server 中最流行的关系型数据库
+- 免费下载学习
+- 轻量级，易学易用
+
+MySQL 下载： https://dev.mysql.com/downloads/mysql/ 
+
+#### MySQL 安装：
+
+- 解压，打开根目录初始化` my.ini ` 文件， 自行创建在安装根目录下创建` my.ini `
+
+  ``` ini
+  [mysqld]
+  # 设置3306端口
+  port=3306
+  # 设置mysql的安装目录
+  basedir=C:\Program Files\MySQL
+  # 设置mysql数据库的数据的存放目录
+  datadir=C:\Program Files\MySQL\Data
+  # 允许最大连接数
+  max_connections=200
+  # 允许连接失败的次数。
+  max_connect_errors=10
+  # 服务端使用的字符集默认为utf8mb4
+  character-set-server=utf8mb4
+  # 创建新表时将使用的默认存储引擎
+  default-storage-engine=INNODB
+  # 默认使用“mysql_native_password”插件认证
+  #mysql_native_password
+  default_authentication_plugin=mysql_native_password
+  [mysql]
+  # 设置mysql客户端默认字符集
+  default-character-set=utf8mb4
+  [client]
+  # 设置mysql客户端连接服务端时默认使用的端口
+  port=3306
+  default-character-set=utf8mb4
+  ```
+
+   配置文件中的路径要和实际存放的路径一致（要手动创建Data文件夹） 
+
+- 打开系统设置，配置环境变量 ` Path = '解压目录'\bin
+
+- 初始化安装：`  mysqld --initialize --console  `
+
+  注意输出信息：` root @ localhost：后面是初始密码（不含首位空格）`，后续登录需要用到，复制密码先保存起来
+
+- 安装MySQL 服务：` mysqld --install[服务名]` 不填默认` mysql `
+
+- 启动MySQL：` net start mysql`
+
+#### 使用官方客户端管理mysql
+
+- Wrokbench 下载地址：https://dev.mysql.com/downloads/
+
+- 默认安装，打开后输入之前保存的默认密码登录
+- 弹出修改密码界面，修改密码再登录
+
+### MySQL基本使用
+
+#### 根据需求设计表
+
+users：
+
+|  id  | username | password | realname |
+| :--: | :------: | :------: | :------: |
+|  1   | zhangsan |   123    |   张三   |
+|  2   |   lisi   |   1234   |   李四   |
+
+blogs：
+
+|  id  | title | content |  createtime   |  author  |
+| :--: | :---: | :-----: | :-----------: | :------: |
+|  1   | 标题A |  内容A  | 1573989043149 | zhangsan |
+|  2   | 标题B |  内容B  | 1573989111301 |   lisi   |
+
+#### MySQL具体操作
+
+右键表 ` Drop table ` 删除
+
+右键表 ` Alter table ` 修改
+
+``` mysql
+-- 显示数据库
+ show databases;
+
+-- 创建数据库
+ CREATE SCHEMA `myblog` ;
+
+-- 创建users数据表
+ CREATE TABLE `myblog`.`users` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `username` VARCHAR(20) NOT NULL,
+  `password` VARCHAR(45) NOT NULL,
+  `realname` VARCHAR(10) NOT NULL,
+  PRIMARY KEY (`id`));
+  
+-- 创建blogs数据表
+ CREATE TABLE `myblog`.`blogs` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(50) NOT NULL,
+  `content` LONGTEXT NOT NULL,
+  `createtime` BIGINT(20) NOT NULL,
+  `author` VARCHAR(20) NOT NULL,
+  PRIMARY KEY (`id`));
+
+-- 使用myblog数据库
+ use myblog;
+
+-- 显示当前数据库中的表
+ show tables;
+
+-- 增加数据
+ insert into users (username,`password`,realname)values('zhangsan','123','张三'); 
+ insert into users (username,`password`,realname)values('lisi','1234','李四'); 
+ 
+-- 查询数据 '*'代表所有 比较消耗性能
+  select * from users;
+  
+-- 查询指定行列数据
+ select id,username from users;
+ 
+-- 根据条件查询并集或交集
+ select * from users where username='zhangsan' and `password`='123';
+ select * from users where username='zhangsan' or `password`='123';
+ 
+-- 根据条件模糊查询
+ select * from users where username like '%zhang%';
+  
+-- 根据条件模糊查询并根据条件倒序
+ select * from users where password like '%1%' order by id desc;
+ 
+-- Error Code: 1175. 先解除安全模式再更新或删除
+ SET SQL_SAFE_UPDATES=0;
+ 
+-- 更新数据表 
+ update users set realname='李四2' where username='lisi';
+ 
+-- 删除数据表
+ delete from users where username='lisi';
+ 
+-- 软删除，给数据加上删除标记 state='0',通常不使用 delete 语句
+ALTER TABLE `myblog`.`users` 
+ADD COLUMN `stats` INT(11) NOT NULL AFTER `realname`;
+ select * from users where state='1';
+ 
+-- 不等于号 <>
+ select * from users where state<>'0';
+ 
+-- 本教程使用真删除，删除 stats
+ALTER TABLE `myblog`.`users` 
+DROP COLUMN `stats`;
+
+-- 往 blogs 填充数据方便测试
+ insert into blogs (title,content,createtime,author)values('标题A','内容A','1573989043149','zhangsan');
+ insert into blogs (title,content,createtime,author)values('标题B','内容B','1573989111301','lisi');
+ 
+-- 查询 blogs 数据 条件查询 倒叙查询 模糊查询
+ select * from blogs;
+ select * from blogs where author='lisi' order by createtime desc;
+ select * from blogs where title like '%A%' order by createtime desc;
+```
+
+
+
+### API 对接 MySQL
+
+## Cookie
+
+## Session 与 Redis
+
+## Web 安全
+
+## Express
 
 
 
