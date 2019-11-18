@@ -565,11 +565,11 @@ const querystring = require('querystring')
 const getPostData = (req) => {
 	const promise = new Promise((resolve, reject) => {
 		if (req.method !== 'POST') {
-			resolove({})
+			resolve({})
 			return
 		}
 		if (req.headers['content-type'] !== 'application/json') {
-			resolove({})
+			resolve({})
 			return
 		}
 		let postData = ''
@@ -855,7 +855,7 @@ module.exports = {
   - API ：前后端、不同端（子系统）之间对接的通用术语
   - 路由：系统内部的接口定义，是 API 的一部分
 
-## 数据库与登录验证
+## 使用MySQL数据库
 
 ### MySQL安装
 
@@ -986,33 +986,33 @@ blogs：
 -- 显示当前数据库中的表
  show tables;
 
--- 增加数据
+-- 增加数据到指定表内
  insert into users (username,`password`,realname)values('zhangsan','123','张三'); 
  insert into users (username,`password`,realname)values('lisi','1234','李四'); 
  
--- 查询数据 '*'代表所有 比较消耗性能
+-- 从指定表内 查询数据 '*'代表所有 比较消耗性能
   select * from users;
   
--- 查询指定行列数据
+-- 从指定表内 查询指定行列数据 
  select id,username from users;
  
--- 根据条件查询并集或交集
+-- 从指定表内 根据条件查询并集或交集
  select * from users where username='zhangsan' and `password`='123';
  select * from users where username='zhangsan' or `password`='123';
  
--- 根据条件模糊查询
+-- 从指定表内 根据条件模糊查询
  select * from users where username like '%zhang%';
   
--- 根据条件模糊查询并根据条件倒序
+-- 从指定表内 根据条件模糊查询并根据条件倒序
  select * from users where password like '%1%' order by id desc;
  
 -- Error Code: 1175. 先解除安全模式再更新或删除
  SET SQL_SAFE_UPDATES=0;
  
--- 更新数据表 
+-- 从指定表内 更新数据表 
  update users set realname='李四2' where username='lisi';
  
--- 删除数据表
+-- 从指定表内 删除数据表
  delete from users where username='lisi';
  
 -- 软删除，给数据加上删除标记 state='0',通常不使用 delete 语句
@@ -1037,15 +1037,647 @@ DROP COLUMN `stats`;
  select * from blogs where title like '%A%' order by createtime desc;
 ```
 
+#### 总结
+
+- 如何建库、如何建表
+- 建表时常用数据类型（ int bigint varchar longtext）
+- SQL 语句实现增删改查
+
+### Node.js 操作 MySQL
+
+1. 示例：用 demo 演示 Node.js 操作 MySQL
+
+2. 封装：将其封装为系统可用的工具
+
+3. 使用：让 API 直接操作 MySQL
+
+#### Node.js 操作 MySQL demo
+
+安装MySQL模块到本目录： ` npm install mysql ` 
+
+``` javaScript
+// 测试demo 文件
+const mysql = require('mysql')
+
+//创建连接对象
+const con = mysql.createConnection({
+	host: 'localhost',
+	user: 'root',
+	password: 'root2019',
+	port: '3306',
+	database: 'myblog'
+})
+
+//开始连接
+con.connect()
+
+// 执行 SQL 语句
+const sql = `update users set realname='李四二' where username='lisi';`
+// const sql = `select * from blogs;`
+// const sql = `insert into blogs (title,content,createtime,author)values('标题A','内容A','1573989043149','zhangsan');`
+
+con.query(sql, (err, result) => {
+	if (err) {
+		console.log(err)
+		return
+	}
+	console.log(result)
+})
+
+//关闭连接
+con.end()
+```
+
+#### MySQL封装成工具
+
+``` javascript
+// ../src/conf/db.js
+const env = process.env.NODE_ENV //环境参数
+
+//配置
+let MYSQL_CONF
+
+if (env === 'dev') {
+	MYSQL_CONF = {
+	host: 'localhost',
+	user: 'root',
+	password: 'root2019',
+	port: '3306',
+	database: 'myblog'
+	}
+}
+
+if (env === 'production') {
+	MYSQL_CONF = {
+	host: 'localhost',
+	user: 'root',
+	password: 'root2019',
+	port: '3306',
+	database: 'myblog'
+	}
+}
+
+module.exports = {
+	MYSQL_CONF
+}
+```
+
+``` javascript
+// ../src/db/mysql.js
+const mysql = require('mysql')
+const { MYSQL_CONF } = require('../conf/db.js')
+
+// 创建链接对象
+const con = mysql.createConnection(MYSQL_CONF)
+
+//开始连接
+con.connect()
+
+// 统一执行 sql 语句的函数
+function exec(sql) {
+	const promise = new Promise((resolve, reject) => {
+		con.query(sql, (err, result) => {
+			if (err) {
+				reject(err)
+				return
+			}
+			resolve(result)
+		})
+	})
+	return promise
+}
+module.exports = {
+	exec
+}
+```
 
 
-### API 对接 MySQL
 
-## Cookie
+#### API 对接 MySQL
 
-## Session 与 Redis
+- ` api/blog/xxx  ` 对接 MySQL
+
+  ``` javascript
+  // app.js 代码
+  
+  const handleBlogRouter = require('./src/router/blog')
+  const handleUserRouter = require('./src/router/user')
+  const querystring = require('querystring')
+  
+  //用于处理 post data
+  const getPostData = (req) => {
+  	const promise = new Promise((resolve, reject) => {
+  		if (req.method !== 'POST') {
+  			resolve({})
+  			return
+  		}
+  		if (req.headers['content-type'] !== 'application/json') {
+  			resolve({})
+  			return
+  		}
+  		let postData = ''
+  		//开始接收数据
+  		req.on('data', chunk => {
+  			postData += chunk.toString()
+  		})
+  		//结束接收数据
+  		req.on('end', () => {
+  			if (!postData) {
+  				resolve({})
+  				return
+  			}
+  			resolve(
+  				JSON.parse(postData)
+  			)
+  		})
+  
+  
+  	})
+  	return promise
+  }
+  
+  const serverHandle = (req, res) => {
+  	//设置返回值格式 JSON
+  	res.setHeader('Content-type', 'application/json')
+  	
+  	// 获取 path
+  	const url = req.url
+  	req.path = url.split('?')[0]
+  
+  	//解析 query
+  	req.query = querystring.parse(url.split('?')[1])
+  
+  	//处理 postData
+  	getPostData(req).then(postData => {
+  		req.body = postData
+  
+  		//处理 blog 路由
+  		const blogResult = handleBlogRouter(req, res)
+  			if (blogResult) {
+  				blogResult.then(blogData => {
+  				res.end(
+  					JSON.stringify(blogData)
+  				)
+  			})
+  			return
+  		}
+  		
+  		
+  		//处理 user 路由
+  		const userResult = handleUserRouter(req, res)
+  		if (userResult) {
+  			userResult.then(userData => {
+  				res.end(
+  					JSON.stringify(userData)
+  				)
+  			})
+  			return
+  		}
+  		//未命中路由，返回404
+  		res.writeHead(404, {"Content-type": "text/plain"})
+  		res.write("404 Not Found\n")
+  		res.end()
+  	
+  	})
+  	
+  	
+  
+  }
+  
+  module.exports = serverHandle
+  
+  
+  ///////////// ../src/controller/blog.js  ///////////////////
+  
+  
+  const { exec } = require('../db/mysql')
+  
+  //博客列表
+  const getList = (author, keyword) => {
+  	let sql = `select * from blogs where 1=1 `
+  	if (author) {
+  		sql += `and author='${author}' `
+  	} 
+  	if (keyword) {
+  		sql += `and title like '%${keyword}%' `
+  	}
+  	sql += `order by createtime desc;`
+  
+  	//返回 promise
+  	return exec(sql)
+  }
+  
+  //博客详情
+  const getDetail = ( id ) => {
+  	const sql = `select * from blogs where id='${id}'`
+  	return exec(sql).then(rows => {
+  		return rows[0]})
+  	
+  }
+  
+  //新建博客
+  const newBlog = (blogData = {}) => {
+  	// blogData 是一个博客对象，包含 title conten 属性
+  	const title = blogData.title
+  	const content = blogData.content
+  	const author = blogData.author
+  	const createtime = Date.now()
+  
+  	const sql = `
+  	insert into blogs (title, content, createtime, author)
+  	values('${title}', '${content}', '${createtime}', '${author}')
+  	`
+  
+  	return exec(sql).then(insertData => {
+  		return {
+  			id: insertData.insertId
+  		}
+  	})
+  }
+  
+  //更新博客
+  const updateBlog = (id, blogData = {}) => {
+  	// id 就是要更新的 id
+  	// blogData 是一个博客对象，包含 title content 属性
+  	const title = blogData.title
+  	const content = blogData.content
+  
+  	const sql = `
+  		update blogs set title='${title}', content='${content}' where id=${id}
+  	`
+  
+  	return exec(sql).then(updateData => {
+  		if (updateData.affectedRows > 0) {
+  			return true
+  		}
+  		return false
+  	})
+  }
+  
+  //删除博客
+  const delBlog = (id, author) => {
+  	// id 就是要删除的博客的 id
+  	const sql = `delete from blogs where id=${id} and author='${author}'`
+  
+  	return exec(sql).then(delData => {
+  		if (delData.affectedRows > 0) {
+  			return true
+  		}
+  		return false
+  	})
+  }
+  
+  module.exports = {
+  	getList,
+  	getDetail,
+  	newBlog,
+  	updateBlog,
+  	delBlog
+  }
+  
+  
+  
+  
+  ///////////////// ../src/router/user.js /////////////////
+  
+  const { 
+  	getList, 
+  	getDetail,
+  	newBlog,
+  	updateBlog,
+  	delBlog
+  } = require('../controller/blog')
+  const { SuccessModel, ErrorModel } = require('../model/resModel')
+  
+  const handleBlogRouter = (req, res) => {
+  	const method = req.method //GET POST
+  	const id = req.query.id
+  
+  	//获取博客列表
+  	if (method === 'GET' && req.path === '/api/blog/list') {
+  		const author = req.query.author || ''
+  		const keyword = req.query.keyword || ''
+  		// const listData = getList(author, keyword)
+  		// return new SuccessModel(listData)
+  		const result = getList(author, keyword)
+  		return result.then(listData => {
+  			return new SuccessModel(listData)
+  		})
+  	}
+  
+  	//获取博客详情
+  	if (method === 'GET' && req.path ==='/api/blog/detail') {
+  		const result = getDetail(id)
+  		return result.then(detailData => {
+  			return new SuccessModel(detailData)
+  		})
+  	}
+  
+  	//新建博客
+  	if (method === 'POST' && req.path === '/api/blog/new') {
+  
+  		const author ='zhangsan' //作者假数据，等待登录
+  		req.body.author = author
+  
+  		const result = newBlog(req.body)
+  		return result.then(data => {
+  			return new SuccessModel(data)
+  		})
+  	}
+  
+  	//更新博客
+  	if (method === 'POST' && req.path === '/api/blog/update') {
+  		const result = updateBlog(id, req.body)
+  		return result.then(value => {
+  			if (value) {
+  				return new SuccessModel()
+  			} 
+  			return new ErrorModel('Failed!')
+  		})
+  	}
+  	
+  
+  	//删除博客
+  	if (method === 'POST' && req.path === '/api/blog/del') {
+  		const author ='zhangsan' //作者假数据，等待登录
+  		req.body.author = author
+  
+  		const result = delBlog(id, author)
+  		return result.then(value => {
+  			if (value) {
+  				return new SuccessModel()
+  			}
+  			return new ErrorModel()
+  		})
+  	}
+  }
+  
+  module.exports = handleBlogRouter
+  ```
+
+  
+
+- ` api/user/xxx  ` 对接MySQL
+
+  ``` javascript
+  ///////////////// ../src/controller/user.js /////////////////
+  
+  const { exec } = require('../db/mysql.js')
+  
+  //登录验证
+  const loginCheck = (username, password) => {
+  	const sql = `
+  		select username from users where username='${username}' and password='${password}'
+  	`
+  	return exec(sql).then(rows => {
+  		return rows[0] || {}
+  	})
+  }
+  
+  module.exports = {
+  	loginCheck
+  }
+  
+  ///////////////// ../src/router/user.js /////////////////
+  
+  const { loginCheck } = require('../controller/user') //'路径里面不能有空格'
+  const { SuccessModel, ErrorModel } = require('../model/resModel')
+  
+  const handleUserRouter = (req, res) => {
+  	const method = req.method //GET POST
+  
+  	//登录
+  	if (method === 'POST' && req.path === '/api/user/login') {
+  		const {username, password } = req.body
+  		const result = loginCheck(username, password)
+  		return result.then(data =>{
+  			if (data.username) {
+  				return new SuccessModel(username)
+  			}
+  			return new ErrorModel('login failed!')
+  		})
+  		
+  	}
+  }
+  
+  module.exports = handleUserRouter
+  ```
+
+
+#### 总结
+
+- Node.js 连接 MySQL，如何执行 sql 语句
+- 根据 NODE_ENV 区分设置
+- 封装 exec 函数，API 使用 exec 操作数据库
+
+## 用户登录
+
+- 核心：登录校验 & 登录信息存储
+- 为何只讲登录，不讲注册？
+  - 注册复杂程度低，涉及内容少
+  - 登录有统一解决方案
+
+### Cookie 
+
+- 什么是 Cookie
+
+  - 存储在浏览器的字符串（最大5KB）
+  - 跨域不共享
+  - 格式如 K1=V1;K2=V3;K3=V3; 因此可以存储结构化数据
+  - 每次发送 Http 请求，会将请求域的 Cookie 一起发送给 Server
+  - Server 可以修改 Cookie 并返回给浏览器
+  - 浏览器也可以通过 JavaScript 修改 Cookie （有限制）
+
+- JavaScript 操作Cookie，在浏览器中查看 Cookie
+
+  - ` document.cookie = 'k1=100;' ` 实现 Cookie 累加
+  - F12 打开控制台 选择 Application，Storage，Cookie，选择指定 Cookie 按上方的X或delete键删除
+
+- Server 端操作 Cookie，实现登录验证
+
+  - 查看 Cookie
+  - 修改 Cookie
+  - 实现登录验证
+
+  ``` javascript
+  // ../src/router/user.js
+  const { login } = require('../controller/user') //'路径里面不能有空格'
+  const { SuccessModel, ErrorModel } = require('../model/resModel')
+  
+  //获取 cookie 过期时间
+  const getCookieExpires = () => {
+  	const d = new Date()
+  	d.setTime(d.getTime() + (24*60*60*1000))
+  	console.log('d.toGMTString() is ', d.toGMTString())
+  	return d.toGMTString()
+  }
+  
+  const handleUserRouter = (req, res) => {
+  	const method = req.method //GET POST
+  
+  	// 登录
+  	if (method === 'GET' && req.path === '/api/user/login') {
+  		// const {username, password } = req.body
+  		const { username, password } =req.query
+  		const result = login(username, password)
+  		return result.then(data =>{
+  			if (data.username) {
+  
+  			// 操作 cookie
+  			res.setHeader('Set-Cookie', `username=${data.username}; path=/; httpOnly; expires=${getCookieExpires()}`)
+  
+  				return new SuccessModel()
+  			}
+  			return new ErrorModel('login failed!')
+  		})
+  		
+  	}
+  
+  	// 登录验证测试
+  	if (method === 'GET' && req.path === '/api/user/login-test') {
+  		// console.log(req.cookie.username)
+  		// 只能按顺序读取
+  		if (req.cookie.username) {
+  
+  			return Promise.resolve( new SuccessModel()) 
+  		}
+  		return Promise.resolve( new ErrorModel('未登录'))
+  	}
+  
+  }
+  
+  
+  module.exports = handleUserRouter
+  ```
+
+  ``` javascript
+  // app.js 代码
+  const handleBlogRouter = require('./src/router/blog')
+  const handleUserRouter = require('./src/router/user')
+  const querystring = require('querystring')
+  
+  // 用于处理 post data
+  const getPostData = (req) => {
+  	const promise = new Promise((resolve, reject) => {
+  		if (req.method !== 'POST') {
+  			resolve({})
+  			return
+  		}
+  		if (req.headers['content-type'] !== 'application/json') {
+  			resolve({})
+  			return
+  		}
+  		let postData = ''
+  		// 开始接收数据
+  		req.on('data', chunk => {
+  			postData += chunk.toString()
+  		})
+  		// 结束接收数据
+  		req.on('end', () => {
+  			if (!postData) {
+  				resolve({})
+  				return
+  			}
+  			resolve(
+  				JSON.parse(postData)
+  			)
+  		})
+  
+  
+  	})
+  	return promise
+  }
+  
+  const serverHandle = (req, res) => {
+  	// 设置返回值格式 JSON
+  	res.setHeader('Content-type', 'application/json')
+  	
+  	// 获取 path
+  	const url = req.url
+  	req.path = url.split('?')[0]
+  
+  	// 解析 query
+  	req.query = querystring.parse(url.split('?')[1])
+  
+  	// 解析 Cookie
+  	req.cookie = {}
+  	const cookieStr = req.headers.cookie || '' // k1=v1;k2=v2
+  	cookieStr.split(';').forEach(item => {
+  		if (!item) {
+  			return
+  		}
+  		const arr = item.split('=')
+  		const key = arr[0].trim()
+  		const val = arr[1].trim()
+  		req.cookie[key] = val
+  	})
+  	console.log('req.cookie:',req.cookie)
+  
+  	// 处理 postData
+  	getPostData(req).then(postData => {
+  		req.body = postData
+  
+  		// 处理 blog 路由
+  		const blogResult = handleBlogRouter(req, res)
+  			if (blogResult) {
+  				blogResult.then(blogData => {
+  				res.end(
+  					JSON.stringify(blogData)
+  				)
+  			})
+  			return
+  		}
+  		
+  		
+  		// 处理 user 路由
+  		const userResult = handleUserRouter(req, res)
+  		if (userResult) {
+  			userResult.then(userData => {
+  				res.end(
+  					JSON.stringify(userData)
+  				)
+  			})
+  			return
+  		}
+  		// 未命中路由，返回404
+  		res.writeHead(404, {"Content-type": "text/plain"})
+  		res.write("404 Not Found\n")
+  		res.end()
+  	
+  	})
+  	
+  	
+  
+  }
+  
+  module.exports = serverHandle
+  ```
+
+  
+
+### Session
+
+- Cookie 存放信息非常危险
+- 如何解决：cookie 中存储 userId， server 端对应 username
+- 解决方案：session ，即 server 端储存用户信息
+
+### Session 写入 Redis
+
+
+
+
+
+### 开发登录 前端联调
+
+
+
+### Nginx 反向代理
+
+
 
 ## Web 安全
+
+
 
 ## Express
 
