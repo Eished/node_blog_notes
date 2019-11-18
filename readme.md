@@ -161,7 +161,7 @@ console.log('OK')
 **新建文件夹blog_1，在里面新建bin文件夹和app.js，在bin里面新建www.js文件**
 
 ``` javascript
-//package.json 代码 注意： =不能有空格
+// package.json 代码 注意： =不能有空格
 {
   "name": "blog_1",
   "version": "1.0.0",
@@ -176,7 +176,7 @@ console.log('OK')
   "license": "ISC"
 }
 
-//app.js 代码
+// app.js 代码
 const handleBlogRouter = require('./src/router/blog')
 const handleUserRouter = require('./src/router/user')
 
@@ -218,7 +218,7 @@ const serverHandle = (req, res) => {
 
 module.exports = serverHandle
 
-//www.js 代码
+// ../bin/www.js 代码
 const http = require('http')
 
 const PORT = 300
@@ -2372,6 +2372,15 @@ module.exports = handleBlogRouter
 - Cookie 跨域不共享，前端和 server 端必须同域
 - 需要用到 Nginx 做代理，让前后端共域
 
+
+
+#### 启动 http-server
+
+- ` npm -install http-server `
+- ` http-server -p 301 `
+
+
+
 #### Nginx 反向代理
 
 - 高性能的 Web 服务器，开源免费
@@ -2424,11 +2433,57 @@ worker_processes  2;
 
 注意：变更设置后要重启 Nginx ！
 
+
+
+#### 联调测试各个功能
+
+增加管理页面权限
+
+- ` admin.html` 增加一个 isadmin=1 参数，使用登录者的用户名，后端也需要修改 
+
+- ```javascript
+  // ../src/router/blog.js
+  //获取博客列表
+  	if (method === 'GET' && req.path === '/api/blog/list') {
+  		let author = req.query.author || ''
+  		const keyword = req.query.keyword || ''
+  		// const listData = getList(author, keyword)
+  		// return new SuccessModel(listData)
+  
+  		if (req.query.isadmin) {
+  			// 管理员界面
+  			const loginCheckResult = loginCheck(req)
+  			if (loginCheckResult) {
+  				// 未登录
+  				return loginCheckResult
+  			}
+  			// 强制查询自己的博客
+  			author = req.session.username
+  
+  		}
+  
+  		const result = getList(author, keyword)
+  		return result.then(listData => {
+  			return new SuccessModel(listData)
+  		})
+  	}
+  ```
+
+
+
+#### 总结
+
+- Cookie 是什么？Session 是什么？如何实现登录？
+- Redis 扮演什么角色？有什么核心价值？
+- Nginx 的反向代理配置，联调过程中的作用
+
+
+
 ## Web 安全
 
 
 
-## Express
+## Express 框架
 
 
 
