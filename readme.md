@@ -1,4 +1,6 @@
-Node.js搭建博客
+
+
+# Node.js搭建博客
 
 ## 开发接口（不用框架）
 
@@ -950,7 +952,7 @@ blogs：
 |  1   | 标题A |  内容A  | 1573989043149 | zhangsan |
 |  2   | 标题B |  内容B  | 1573989111301 |   lisi   |
 
-#### MySQL具体操作
+#### MySQL语法和操作
 
 右键表 ` Drop table ` 删除
 
@@ -1661,19 +1663,766 @@ module.exports = {
 - 如何解决：cookie 中存储 userId， server 端对应 username
 - 解决方案：session ，即 server 端储存用户信息
 
-### Session 写入 Redis
+``` javascript
+// ../src/router/user.js
+// ../src/router/user.js
+
+const { login } = require('../controller/user') //'路径里面不能有空格'
+const { SuccessModel, ErrorModel } = require('../model/resModel')
+
+//获取 cookie 过期时间
+const getCookieExpires = () => {
+	const d = new Date()
+	d.setTime(d.getTime() + (24*60*60*1000))
+	console.log('d.toGMTString() is ', d.toGMTString())
+	return d.toGMTString()
+}
+
+const handleUserRouter = (req, res) => {
+	const method = req.method //GET POST
+
+	// 登录
+	if (method === 'GET' && req.path === '/api/user/login') {
+		// const {username, password } = req.body
+		const { username, password } =req.query
+		const result = login(username, password)
+		return result.then(data =>{
+			if (data.username) {
+			// // 操作 cookie
+			// res.setHeader('Set-Cookie', `username=${data.username}; path=/; httpOnly; expires=${getCookieExpires()}`)
+				req.session.username = data.username
+				req.session.realname = data.realname
+				console.log('session:', req.session)
+				return new SuccessModel()
+			}
+			return new ErrorModel('login failed!')
+		})
+		
+	}
+
+	// 登录验证测试
+	if (method === 'GET' && req.path === '/api/user/login-test') {
+		// console.log(req.cookie.username)
+		// 只能按顺序读取
+		if (req.session.username) {
+
+			return Promise.resolve( new SuccessModel({
+				session: req.session
+			})) 
+		}
+		return Promise.resolve( new ErrorModel('未登录'))
+	}
+
+}
 
 
+module.exports = handleUserRouter
+```
+
+``` javascript
+// app.js 代码
+
+const handleBlogRouter = require('./src/router/blog')
+const handleUserRouter = require('./src/router/user')
+const querystring = require('querystring')
+
+//获取 cookie 过期时间
+const getCookieExpires = () => {
+	const d = new Date()
+	d.setTime(d.getTime() + (24*60*60*1000))
+	console.log('d.toGMTString() is ', d.toGMTString())
+	return d.toGMTString()
+}
+
+
+// session 数据
+const SESSION_DATA = {
+
+}
+
+// 用于处理 post data
+const getPostData = (req) => {
+	const promise = new Promise((resolve, reject) => {
+		if (req.method !== 'POST') {
+			resolve({})
+			return
+		}
+		if (req.headers['content-type'] !== 'application/json') {
+			resolve({})
+			return
+		}
+		let postData = ''
+		// 开始接收数据
+		req.on('data', chunk => {
+			postData += chunk.toString()
+		})
+		// 结束接收数据
+		req.on('end', () => {
+			if (!postData) {
+				resolve({})
+				return
+			}
+			resolve(
+				JSON.parse(postData)
+			)
+		})
+
+
+	})
+	return promise
+}
+
+const serverHandle = (req, res) => {
+	// 设置返回值格式 JSON
+	res.setHeader('Content-type', 'application/json')
+	
+	// 获取 path
+	const url = req.url
+	req.path = url.split('?')[0]
+
+	// 解析 query
+	req.query = querystring.parse(url.split('?')[1])
+
+	// 解析 Cookie
+	req.cookie = {}
+	const cookieStr = req.headers.cookie || '' // k1=v1;k2=v2
+	cookieStr.split(';').forEach(item => {
+		if (!item) {
+			return
+		}
+		const arr = item.split('=')
+		const key = arr[0].trim()
+		const val = arr[1].trim()
+		req.cookie[key] = val
+	})
+
+	// 解析 session 
+	let needSetCookie = false
+	let userId = req.cookie.userid
+	if (userId) {
+		if (!SESSION_DATA[userId]) {
+			SESSION_DATA[userId] = {}
+		}
+	} else {
+		needSetCookie = true
+		userId = `${Date.now()}_${Math.random()}`
+		SESSION_DATA[userId] = {}
+	}
+	req.session = SESSION_DATA[userId]
+
+
+	// 处理 postData
+	getPostData(req).then(postData => {
+		req.body = postData
+
+		// 处理 blog 路由
+		const blogResult = handleBlogRouter(req, res)
+			if (blogResult) {
+				blogResult.then(blogData => {
+					if (needSetCookie) {
+						// 操作 cookie
+						res.setHeader('Set-Cookie', `userid=${data.userId}; path=/; httpOnly; expires=${getCookieExpires()}`)
+					}
+				res.end(
+					JSON.stringify(blogData)
+				)
+			})
+			return
+		}
+		
+		
+		// 处理 user 路由
+		const userResult = handleUserRouter(req, res)
+		if (userResult) {
+			userResult.then(userData => {
+				if (needSetCookie) {
+					// 操作 cookie
+					res.setHeader('Set-Cookie', `userid=${userId}; path=/; httpOnly; expires=${getCookieExpires()}`)
+				
+				}
+				res.end(
+					JSON.stringify(userData)
+				)
+			})
+			return
+		}
+		// 未命中路由，返回404
+		res.writeHead(404, {"Content-type": "text/plain"})
+		res.write("404 Not Found\n")
+		res.end()
+	
+	})
+	
+	
+
+}
+
+module.exports = serverHandle
+```
+
+
+
+- 当前代码 session 代码的问题
+  - session 是 JS 变量，放在 Node.js 进程内存中
+  - 进程内存有限，访问量过大，内存暴增怎么办？
+  - 正式上线是多进程，进程之间内存无法共享
+
+### Redis
+
+#### Redis 特点
+
+- Web Server 最常用的缓存数据库，数据储存在内存中
+- 相比于 MySQL ，访问速度极快
+- 成本更高，储存空间小
+- 将 Web Server 和 Redis 拆分为两个单独服务
+- 双方独立，可扩展
+- 像 MySQL 一样
+
+#### 安装 Redis
+
+- Windows http://www.runoob.com/redis/redis-install.html
+- Mac 使用 brew install redis
+
+打开系统设置，配置环境变量  ` Path = C:\Program Files\Redis `
+
+#### Redis 语法和操作：
+
+- 启动 Redis：
+
+```dos
+redis-server.exe redis.windows.conf
+```
+
+​	注意：这时候另启一个 cmd 窗口，原来的不要关闭，不然就无法访问服务端了。
+
+- 连接数据库:
+
+```
+redis-cli.exe -h 127.0.0.1 -p 6379
+```
+
+- 设置键值对:
+
+```
+set myKey abc
+```
+
+- 取出键值对:
+
+```
+get myKey
+```
+
+- 查看所有键值对:
+
+```
+keys *
+```
+
+- 标准语法 - 连接数据库并等待执行命令 ：
+
+```
+$ redis-cli -h host -p port -a password
+```
+
+- 停止 Redis：
+
+```
+redis-cli -h 127.0.0.1 -p 6379 shutdown 
+```
+
+- 将该程序放到Windows服务中：
+
+```
+redis-server.exe --service-install redis.conf --loglevel verbose
+```
+
+- 卸载Windows服务中的Redis服务：
+
+```
+redis-server --service-uninstall
+```
+
+
+
+**Redis keys 命令**
+
+下表给出了与 Redis 键相关的基本命令：
+
+| 序号 | 命令及描述                                                   |
+| :--- | :----------------------------------------------------------- |
+| 1    | [DEL key](https://www.runoob.com/redis/keys-del.html) 该命令用于在 key 存在时删除 key。 |
+| 2    | [DUMP key](https://www.runoob.com/redis/keys-dump.html) 序列化给定 key ，并返回被序列化的值。 |
+| 3    | [EXISTS key](https://www.runoob.com/redis/keys-exists.html) 检查给定 key 是否存在。 |
+| 4    | [EXPIRE key](https://www.runoob.com/redis/keys-expire.html) seconds 为给定 key 设置过期时间，以秒计。 |
+| 5    | [EXPIREAT key timestamp](https://www.runoob.com/redis/keys-expireat.html) EXPIREAT 的作用和 EXPIRE 类似，都用于为 key 设置过期时间。 不同在于 EXPIREAT 命令接受的时间参数是 UNIX 时间戳(unix timestamp)。 |
+| 6    | [PEXPIRE key milliseconds](https://www.runoob.com/redis/keys-pexpire.html) 设置 key 的过期时间以毫秒计。 |
+| 7    | [PEXPIREAT key milliseconds-timestamp](https://www.runoob.com/redis/keys-pexpireat.html) 设置 key 过期时间的时间戳(unix timestamp) 以毫秒计 |
+| 8    | [KEYS pattern](https://www.runoob.com/redis/keys-keys.html) 查找所有符合给定模式( pattern)的 key 。 |
+| 9    | [MOVE key db](https://www.runoob.com/redis/keys-move.html) 将当前数据库的 key 移动到给定的数据库 db 当中。 |
+| 10   | [PERSIST key](https://www.runoob.com/redis/keys-persist.html) 移除 key 的过期时间，key 将持久保持。 |
+| 11   | [PTTL key](https://www.runoob.com/redis/keys-pttl.html) 以毫秒为单位返回 key 的剩余的过期时间。 |
+| 12   | [TTL key](https://www.runoob.com/redis/keys-ttl.html) 以秒为单位，返回给定 key 的剩余生存时间(TTL, time to live)。 |
+| 13   | [RANDOMKEY](https://www.runoob.com/redis/keys-randomkey.html) 从当前数据库中随机返回一个 key 。 |
+| 14   | [RENAME key newkey](https://www.runoob.com/redis/keys-rename.html) 修改 key 的名称 |
+| 15   | [RENAMENX key newkey](https://www.runoob.com/redis/keys-renamenx.html) 仅当 newkey 不存在时，将 key 改名为 newkey 。 |
+| 16   | [TYPE key](https://www.runoob.com/redis/keys-type.html) 返回 key 所储存的值的类型。 |
+
+#### Redis 数据持久化
+
+```
+1. Rdb：快照形式，定期把内存中当前时刻的数据保存到磁盘。Redis默认支持的持久化方案。
+2. aof形式：append only file。把所有对redis数据库操作的命令，增删改操作的命令，保存到文件中。
+   如果redis宕机：数据库恢复时把启动命令执行一遍即可。（其实就是直接启动）
+```
+
+持久化方案在redis.conf 配置文件中配置：
+
+ aof方式（这里直接修改就好）
+
+```
+appendonly no              -- 默认关闭aof持久化方案， 如果要开启要把 no 修改为 yes
+
+appendfilename "appendonly.aof"        -- 设置aof持久化的文件名
+```
+
+  Rdb方式（默认，这里可以自己修改）： 
+
+```
+save 900 1            -- 900秒存入1条数据，开始持久化数据
+save 300 10           -- 300秒存入10条数据，开始持久化数据
+save 60 10000         -- 60秒存入10000条数据，开始持久化数据
+```
+
+
+
+可能出现的问题：强制关闭Redis快照导致不能持久化。
+
+```
+TypeError:MISCONF Redis is configured to save RDB snapshots, but is currently not 	able to persist on disk. Commands that may modify the data set are disabled. Please check Redis logs for details about the error.
+```
+
+```
+解决方案： 将 stop-writes-on-bgsave-error 设置为 no 
+输入命令： 127.0.0.1:6379> config set stop-writes-on-bgsave-error no
+```
+
+
+
+#### Node.js 连接 Redis
+
+ 	**demo 代码：**
+
+```  javascript
+const redis = require('redis')
+
+// 创建客户端
+const redisClient = redis.createClient(6379, '127.0.0.1')
+redisClient.on('error', err =>{
+	console.error(err)
+})
+
+// 测试
+redisClient.set('myname2', 'zhangsan张三', redis.print)
+redisClient.get('myname2', (err, val) => {
+	if (err) {
+		console.log(err)
+		return
+	}
+	console.log('val', val)
+
+	// 退出
+	redisClient.quit()
+})
+```
+
+
+
+#### Session 存入 Redis
+
+``` javascript 
+// 仅展示有改动的函数
+// app.js 代码
+
+const { get, set } = require('./src/db/redis')
+
+const serverHandle = (req, res) => {
+	// 设置返回值格式 JSON
+	res.setHeader('Content-type', 'application/json')
+	
+	// 获取 path
+	const url = req.url
+	req.path = url.split('?')[0]
+
+	// 解析 query
+	req.query = querystring.parse(url.split('?')[1])
+
+	// 解析 Cookie
+	req.cookie = {}
+	const cookieStr = req.headers.cookie || '' // k1=v1;k2=v2
+	cookieStr.split(';').forEach(item => {
+		if (!item) {
+			return
+		}
+		const arr = item.split('=')
+		const key = arr[0].trim()
+		const val = arr[1].trim()
+		req.cookie[key] = val
+	})
+
+	// 解析 session 
+	// let needSetCookie = false
+	// let userId = req.cookie.userid
+	// if (userId) {
+	// 	if (!SESSION_DATA[userId]) {
+	// 		SESSION_DATA[userId] = {}
+	// 	}
+	// } else {
+	// 	needSetCookie = true
+	// 	userId = `${Date.now()}_${Math.random()}`
+	// 	SESSION_DATA[userId] = {}
+	// }
+	// req.session = SESSION_DATA[userId]
+
+	// 解析 session 
+	let needSetCookie = false
+	let userId = req.cookie.userid
+	if (!userId) {
+		needSetCookie = true
+		userId = `${Date.now()}_${Math.random()}`
+		set(userId, {})
+	}
+	console.log('userId:', userId)
+
+	// 获取session
+	req.sessionId = userId
+	get(req.sessionId).then(sessionData => {
+		if (sessionData == null) {
+			// 初始化 redis 中的 session 值
+			set(req.sessionId, {})
+			//初始化 session
+			req.session = {}
+		} else {
+			// 设置 session
+			req.session = sessionData
+		}
+		console.log('req.session:', req.session)
+
+		// 处理 postData
+		return getPostData(req)
+	})
+	.then(postData => {
+		req.body = postData
+
+		const blogResult = handleBlogRouter(req, res)
+			if (blogResult) {
+				blogResult.then(blogData => {
+					if (needSetCookie) {
+						// 操作 cookie
+						res.setHeader('Set-Cookie', `userid=${userId}; path=/; httpOnly; expires=${getCookieExpires()}`)
+					}
+				res.end(
+					JSON.stringify(blogData)
+				)
+			})
+			return
+		}
+		
+		
+		// 处理 user 路由
+		const userResult = handleUserRouter(req, res)
+		if (userResult) {
+			userResult.then(userData => {
+				if (needSetCookie) {
+					// 操作 cookie
+					res.setHeader('Set-Cookie', `userid=${userId}; path=/; httpOnly; expires=${getCookieExpires()}`)
+				
+				}
+				res.end(
+					JSON.stringify(userData)
+				)
+			})
+			return
+		}
+		// 未命中路由，返回404
+		res.writeHead(404, {"Content-type": "text/plain"})
+		res.write("404 Not Found\n")
+		res.end()
+	})
+
+}
+
+```
+
+
+
+``` javascript 
+// 仅展示有改动的函数
+// ../src/router/user.js
+
+const { set, get } = require('../db/redis')
+
+const handleUserRouter = (req, res) => {
+	const method = req.method //GET POST
+
+	// 登录
+	if (method === 'POST' && req.path === '/api/user/login') {
+		// const {username, password } = req.body
+		const { username, password } = req.body
+		const result = login(username, password)
+		return result.then(data =>{
+			if (data.username) {
+			// // 操作 cookie
+			// res.setHeader('Set-Cookie', `username=${data.username}; path=/; httpOnly; expires=${getCookieExpires()}`)
+				req.session.username = data.username
+				req.session.realname = data.realname
+				set(req.sessionId, req.session)
+				return new SuccessModel('登录成功！')
+			}
+			return new ErrorModel('login failed!')
+		})
+		
+	}
+
+```
+
+
+
+#### 完成 Server 端登录代码
+
+``` javascript 
+// ../src/router/user.js
+
+const { login } = require('../controller/user') //'路径里面不能有空格'
+const { SuccessModel, ErrorModel } = require('../model/resModel')
+const { set, get } = require('../db/redis')
+
+//获取 cookie 过期时间
+// const getCookieExpires = () => {
+// 	const d = new Date()
+// 	d.setTime(d.getTime() + (24*60*60*1000))
+// 	return d.toGMTString()
+// }
+
+const handleUserRouter = (req, res) => {
+	const method = req.method //GET POST
+
+	// 登录
+	if (method === 'POST' && req.path === '/api/user/login') {
+		// const {username, password } = req.body
+		const { username, password } = req.body
+		const result = login(username, password)
+		return result.then(data =>{
+			if (data.username) {
+			// // 操作 cookie
+			// res.setHeader('Set-Cookie', `username=${data.username}; path=/; httpOnly; expires=${getCookieExpires()}`)
+				req.session.username = data.username
+				req.session.realname = data.realname
+				set(req.sessionId, req.session)
+				return new SuccessModel('登录成功！')
+			}
+			return new ErrorModel('login failed!')
+		})
+		
+	}
+
+	/*// 登录验证测试
+	if (method === 'GET' && req.path === '/api/user/login-test') {
+		// console.log(req.cookie.username)
+		// 只能按顺序读取
+		if (req.session.username) {
+
+			return Promise.resolve( new SuccessModel({
+				session: req.session
+			})) 
+		}
+		return Promise.resolve( new ErrorModel('未登录'))
+	}*/
+
+}
+
+
+module.exports = handleUserRouter
+```
+
+
+
+```javascript 
+const { 
+	getList, 
+	getDetail,
+	newBlog,
+	updateBlog,
+	delBlog
+} = require('../controller/blog')
+const { SuccessModel, ErrorModel } = require('../model/resModel')
+
+// 统一的登录验证函数
+const loginCheck = (req) => {
+	if (!req.session.username) {
+		return Promise.resolve( 
+			new ErrorModel('未登录')
+		) 
+	}
+}
+
+const handleBlogRouter = (req, res) => {
+	const method = req.method //GET POST
+	const id = req.query.id
+
+	//获取博客列表
+	if (method === 'GET' && req.path === '/api/blog/list') {
+		let author = req.query.author || ''
+		const keyword = req.query.keyword || ''
+		// const listData = getList(author, keyword)
+		// return new SuccessModel(listData)
+
+		if (req.query.isadmin) {
+			// 管理员界面
+			const loginCheckResult = loginCheck(req)
+			if (loginCheckResult) {
+				// 未登录
+				return loginCheckResult
+			}
+			// 强制查询自己的博客
+			author = req.session.username
+
+		}
+
+		const result = getList(author, keyword)
+		return result.then(listData => {
+			return new SuccessModel(listData)
+		})
+	}
+
+	//获取博客详情
+	if (method === 'GET' && req.path ==='/api/blog/detail') {
+		const result = getDetail(id)
+		return result.then(detailData => {
+			return new SuccessModel(detailData)
+		})
+	}
+
+	//新建博客
+	if (method === 'POST' && req.path === '/api/blog/new') {
+		const loginCheckResult = loginCheck(req)
+		if (loginCheckResult) {
+			// 未登录
+			return loginCheckResult
+		}
+
+		// const author ='zhangsan' //作者假数据，等待登录
+		req.body.author = req.session.username
+		const result = newBlog(req.body)
+		return result.then(data => {
+			return new SuccessModel(data)
+		})
+	}
+
+	//更新博客
+	if (method === 'POST' && req.path === '/api/blog/update') {
+		// const author ='zhangsan' //作者假数据，等待登录
+		const loginCheckResult = loginCheck(req)
+		if (loginCheckResult) {
+			// 未登录
+			return loginCheckResult
+		}
+
+		const result = updateBlog(id, req.body)
+		return result.then(value => {
+			if (value) {
+				return new SuccessModel()
+			} 
+			return new ErrorModel('Failed!')
+		})
+	}
+	
+
+	//删除博客
+	if (method === 'POST' && req.path === '/api/blog/del') {
+		// const author ='zhangsan' //作者假数据，等待登录
+		const loginCheckResult = loginCheck(req)
+		if (loginCheckResult) {
+			// 未登录
+			return loginCheckResult
+		}
+
+		// const author ='zhangsan' //作者假数据，等待登录
+
+		req.body.author = req.session.username
+
+		const result = delBlog(id, author)
+		return result.then(value => {
+			if (value) {
+				return new SuccessModel()
+			}
+			return new ErrorModel()
+		})
+	}
+}
+
+module.exports = handleBlogRouter
+```
 
 
 
 ### 开发登录 前端联调
 
+- 登录依赖 Cookie，必须用浏览器
+- Cookie 跨域不共享，前端和 server 端必须同域
+- 需要用到 Nginx 做代理，让前后端共域
+
+#### Nginx 反向代理
+
+- 高性能的 Web 服务器，开源免费
+- 一般用于静态服务、负载平衡（本课用不到）
+- 反向代理（本课用到）
+
+下载地址：
+
+- Windows: http://nginx.org/en/download.html
+- brew install nginx
+
+``` 
+Windows 启动 Nginx 的方法：
+
+1.进入Nginx文件夹，打开PowerSheel
+
+2.输入：start nginx
+
+停止Nginx的方法：
+
+nginx -s stop 或 nginx -s quit
+```
 
 
-### Nginx 反向代理
+
+**配置方法：** 
+
+修改文件：  ` ..\nginx-1.17.5\conf\nginx.conf ` 
+
+``` 
+worker_processes  2;
+ listen       8080;
+ 
+        #location / {
+        #   root   html;
+        #    index  index.html index.htm;
+        #}
+
+        location / {
+        proxy_pass http://localhost:301;
+        }
+
+        location /api/ {
+        proxy_pass http://localhost:300;
+        proxy_set_header Host $host;
+        }
+```
 
 
+
+注意：变更设置后要重启 Nginx ！
 
 ## Web 安全
 
