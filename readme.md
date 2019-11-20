@@ -218,7 +218,7 @@ const serverHandle = (req, res) => {
 
 module.exports = serverHandle
 
-// ../bin/www.js 代码
+// ./bin/www.js 代码
 const http = require('http')
 
 const PORT = 300
@@ -248,7 +248,7 @@ server.listen(PORT)
 具体代码：
 
 ```javascript
-//../src/router/user.js
+// ./src/router/user.js
 const handleUserRouter = (req, res) => {
 	const method = req.method //GET POST
 
@@ -262,7 +262,7 @@ const handleUserRouter = (req, res) => {
 
 module.exports = handleUserRouter
 
-// ../src/router/blog.js
+// ./src/router/blog.js
 const handleUserRouter = (req, res) => {
 	const method = req.method //GET POST
 
@@ -281,16 +281,16 @@ module.exports = handleUserRouter
 
 1. 业务分层 拆分业务
 
-   - createServer 业务单独放在 ` ../bin/www.js `
+   - createServer 业务单独放在 ` ./bin/www.js `
    - 系统基本设置、基本信息 ` app.js ` 放在根目录
-   - 路由功能 ` ../src/router/xxx.js `
-   - 数据管理 ` ../src/contoller/xxx.js `
+   - 路由功能 ` ./src/router/xxx.js `
+   - 数据管理 ` ./src/contoller/xxx.js `
    - 数据处理
 
 2. 博客列表代码
 
    ```javascript
-   // ../app.js 
+   // ./app.js 
    const handleBlogRouter = require('./src/router/blog')
    const handleUserRouter = require('./src/router/user')
    const querystring = require('querystring')
@@ -346,7 +346,7 @@ module.exports = handleUserRouter
    ```
 
    ```javascript
-   // ../src/controller/blog.js
+   // ./src/controller/blog.js
    const getList = (author, keyword) => {
    	//先返回假数据(格式正确)
    	return [
@@ -392,7 +392,7 @@ module.exports = handleUserRouter
    ```
 
    ```javascript
-   // ../src/router/blog.js
+   // ./src/router/blog.js
    const { getList, getDetail } = require('../controller/blog')
    const { SuccessModel, ErrorModel } = require('../model/resModel')
    
@@ -443,7 +443,7 @@ module.exports = handleUserRouter
    ```
 
    ```javascript
-   // ../src/model/resModel.js
+   // ./src/model/resModel.js
    class BaseModel {
    	constructor(data, message) {
    		if (typeof data === 'string') {
@@ -641,7 +641,7 @@ module.exports = serverHandle
 #### 开发路由 （新建和更新博客路由）
 
 ``` javascript
-// ../src/router/blog.js
+// ./src/router/blog.js
 const { 
 	getList, 
 	getDetail,
@@ -699,7 +699,7 @@ module.exports = handleBlogRouter
 ```
 
 ``` javascript
-// ../src/controller/blog.js
+// ./src/controller/blog.js
 //博客列表
 const getList = (author, keyword) => {
 	//先返回假数据(格式正确)
@@ -770,7 +770,7 @@ module.exports = {
 - **删除博客**
 
 ``` javascript
-// ../src/controller/blog.js 里面增加下列代码
+// ./src/controller/blog.js 里面增加下列代码
 //删除博客
 const delBlog = (id) => {
 	// id 就是要删除的博客的 id
@@ -787,7 +787,7 @@ module.exports = {
 ```
 
 ``` javascript
-//  ../src/router/blog.js 里面增加下列代码
+//  ./src/router/blog.js 里面增加下列代码
 	const { 
 	getList, 
 	getDetail,
@@ -810,7 +810,7 @@ module.exports = {
 - **登录博客**
 
 ``` javascript
-// ../src/router/.user.js 代码
+// ./src/router/.user.js 代码
 const { loginCheck } = require('../controller/user') //'路径里面不能有空格'
 const { SuccessModel, ErrorModel } = require('../model/resModel')
 
@@ -832,7 +832,7 @@ module.exports = handleUserRouter
 ```
 
 ``` javascript
-// ../src/controller/user.js 代码
+// ./src/controller/user.js 代码
 //登录验证
 const loginCheck = (username, password) => {
 	console.log('username:', username, 'password:', password)
@@ -1093,7 +1093,7 @@ con.end()
 #### MySQL封装成工具
 
 ``` javascript
-// ../src/conf/db.js
+// ./src/conf/db.js
 const env = process.env.NODE_ENV //环境参数
 
 //配置
@@ -1125,7 +1125,7 @@ module.exports = {
 ```
 
 ``` javascript
-// ../src/db/mysql.js
+// ./src/db/mysql.js
 const mysql = require('mysql')
 const { MYSQL_CONF } = require('../conf/db.js')
 
@@ -1249,7 +1249,7 @@ module.exports = {
   module.exports = serverHandle
   
   
-  ///////////// ../src/controller/blog.js  ///////////////////
+  ///////////// ./src/controller/blog.js  ///////////////////
   
   
   const { exec } = require('../db/mysql')
@@ -1340,7 +1340,7 @@ module.exports = {
   
   
   
-  ///////////////// ../src/router/user.js /////////////////
+  ///////////////// ./src/router/user.js /////////////////
   
   const { 
   	getList, 
@@ -1422,7 +1422,7 @@ module.exports = {
 - ` api/user/xxx  ` 对接MySQL
 
   ``` javascript
-  ///////////////// ../src/controller/user.js /////////////////
+  ///////////////// ./src/controller/user.js /////////////////
   
   const { exec } = require('../db/mysql.js')
   
@@ -1440,7 +1440,7 @@ module.exports = {
   	loginCheck
   }
   
-  ///////////////// ../src/router/user.js /////////////////
+  ///////////////// ./src/router/user.js /////////////////
   
   const { loginCheck } = require('../controller/user') //'路径里面不能有空格'
   const { SuccessModel, ErrorModel } = require('../model/resModel')
@@ -1502,7 +1502,7 @@ module.exports = {
   - 实现登录验证
 
   ``` javascript
-  // ../src/router/user.js
+  // ./src/router/user.js
   const { login } = require('../controller/user') //'路径里面不能有空格'
   const { SuccessModel, ErrorModel } = require('../model/resModel')
   
@@ -1664,8 +1664,8 @@ module.exports = {
 - 解决方案：session ，即 server 端储存用户信息
 
 ``` javascript
-// ../src/router/user.js
-// ../src/router/user.js
+// ./src/router/user.js
+// ./src/router/user.js
 
 const { login } = require('../controller/user') //'路径里面不能有空格'
 const { SuccessModel, ErrorModel } = require('../model/resModel')
@@ -1994,7 +1994,7 @@ save 300 10           -- 300秒存入10条数据，开始持久化数据
 save 60 10000         -- 60秒存入10000条数据，开始持久化数据
 ```
 
-
+**手动输入命令存储到本地： ` redis-cli bgsave`**
 
 可能出现的问题：强制关闭Redis快照导致不能持久化。
 
@@ -2442,8 +2442,9 @@ worker_processes  2;
 - ` admin.html` 增加一个 isadmin=1 参数，使用登录者的用户名，后端也需要修改 
 
 - ```javascript
+  // 只展示改动代码
   // ../src/router/blog.js
-  //获取博客列表
+  	//获取博客列表
   	if (method === 'GET' && req.path === '/api/blog/list') {
   		let author = req.query.author || ''
   		const keyword = req.query.keyword || ''
@@ -2467,6 +2468,26 @@ worker_processes  2;
   			return new SuccessModel(listData)
   		})
   	}
+  
+  	//删除博客
+  	if (method === 'POST' && req.path === '/api/blog/del') {
+  		// const author ='zhangsan' //作者假数据，等待登录
+  		const loginCheckResult = loginCheck(req)
+  		if (loginCheckResult) {
+  			// 未登录
+  			return loginCheckResult
+  		}
+  		// const author ='zhangsan' //作者假数据，等待登录
+  		// req.body.author = req.session.username
+  		const author = req.session.username
+  		const result = delBlog(id, author)
+  		return result.then(value => {
+  			if (value) {
+  				return new SuccessModel()
+  			}
+  			return new ErrorModel()
+  		})
+  	}
   ```
 
 
@@ -2479,7 +2500,670 @@ worker_processes  2;
 
 
 
+## 日志
+
+- 系统日志记录系统状态
+  1. 访问日志 access log（ server 端最重要的日志）
+  2. 自定义日志（包括自定义时间，错误记录等）
+- Node.js 文件操作，Node.js stream
+  - 日志储存到文件中成本低方便
+  - 日志文件文件大，文件单一
+- 日志功能的开发和使用
+- 日志文件拆分，日志内容分析
+
+### Node.js 操作文件
+
+#### 代码演示
+
+```javascript
+const fs = require('fs')
+const path = require('path')
+
+const fileName = path.resolve(__dirname, 'data.txt')
+
+// 读取文件内容
+fs.readFile(fileName, (err, data) => {
+	if (err) {
+		console.error(err)
+		return
+	}
+	console.log(data.toString())
+	return 
+})
+
+const content = '这事新的内容\n'
+const opt = {
+	flag: 'a' // 追加写入，覆盖用 W
+}
+fs.writeFile(fileName, content, opt, (err) => {
+	if (err) {
+		console.log(err)
+	}
+})
+
+```
+
+
+
+### Stream
+
+- IO 操作的性能瓶颈
+  - IO 包括 “网络 IO” 和 “文件 IO”
+  - 相对于 CPU 计算和内存读写， IO 的突出特点就是：慢
+  - 如何在有限的硬件资源下提高 IO 的操作效率
+
+#### 代码演示
+
+```javascript
+// 标准输入输出
+// process.stdin.pipe(process.stdout)
+
+// const http = require('http')
+// const server = http.createServer((req, res) => {
+// 	if (req.method === 'POST') {
+// 		req.pipe(res)
+// 	}
+// })
+
+// server.listen(8000)
+
+
+// 复制文件
+// const fs = require('fs')
+// const path = require('path')
+
+// const fileName1 = path.resolve(__dirname, 'data.txt')
+// const fileName2 = path.resolve(__dirname, 'data-back.txt')
+
+// const readStream = fs.createReadStream(fileName1)
+// const writeStream = fs.createWriteStream(fileName2)
+
+// readStream.pipe(writeStream)
+// readStream.on('data', chunk => {
+// 	console.log(chunk.toString())
+// })
+// readStream.on('end', () => {
+// 	console.log('done!')
+// })
+
+
+const http = require('http')
+const fs = require('fs')
+const path = require('path')
+const fileName1 = path.resolve(__dirname, 'data.txt')
+
+const server = http.createServer((req, res) => {
+	if (req.method === 'GET') {
+		const readStream = fs.createReadStream(fileName1)
+		readStream.pipe(res)
+	}
+})
+
+server.listen(8000)
+```
+
+
+
+### 写日志
+
+```javascript
+// ../src/utils/log.js
+
+const fs = require('fs')
+const path = require('path')
+
+// 写日志
+function writeLog(writeStream, log) {
+	writeStream.write(log + '\n') //关键代码
+}
+
+// 生成 write Stream
+function createWriteStream(fileName) {
+	const fullFileName = path.join(__dirname, '../', '../', 'logs', fileName)
+	const writeStream = fs.createWriteStream(fullFileName, {
+		flags: 'a'
+	})
+	return writeStream
+}
+
+// 写访问日志
+const accessWriteStream = createWriteStream('access.log')
+function access(log) {
+	writeLog(accessWriteStream, log)
+}
+
+module.exports ={
+	access
+}
+```
+
+
+
+```js
+// app.js 代码
+const { access } = require('./src/utils/log')
+const serverHandle = (req, res) => {
+	// 写访问日志
+	access(`${Date.now()}--${req.method}--${req.url}--${req.headers['user-agent']}`)
+
+	// 设置返回值格式 JSON
+	res.setHeader('Content-type', 'application/json')
+	
+	// 获取 path
+	const url = req.url
+	req.path = url.split('?')[0]
+
+	// 解析 query
+	req.query = querystring.parse(url.split('?')[1])
+
+	// 解析 Cookie
+	req.cookie = {}
+	const cookieStr = req.headers.cookie || '' // k1=v1;k2=v2
+	cookieStr.split(';').forEach(item => {
+		if (!item) {
+			return
+		}
+		const arr = item.split('=')
+		const key = arr[0].trim()
+		const val = arr[1].trim()
+		req.cookie[key] = val
+	})
+
+	// 解析 session 
+	// let needSetCookie = false
+	// let userId = req.cookie.userid
+	// if (userId) {
+	// 	if (!SESSION_DATA[userId]) {
+	// 		SESSION_DATA[userId] = {}
+	// 	}
+	// } else {
+	// 	needSetCookie = true
+	// 	userId = `${Date.now()}_${Math.random()}`
+	// 	SESSION_DATA[userId] = {}
+	// }
+	// req.session = SESSION_DATA[userId]
+
+	// 解析 session 
+	let needSetCookie = false
+	let userId = req.cookie.userid
+	if (!userId) {
+		needSetCookie = true
+		userId = `${Date.now()}_${Math.random()}`
+		set(userId, {})
+	}
+	// console.log('userId:', userId)
+
+	// 获取session
+	req.sessionId = userId
+	get(req.sessionId).then(sessionData => {
+		if (sessionData == null) {
+			// 初始化 redis 中的 session 值
+			set(req.sessionId, {})
+			//初始化 session
+			req.session = {}
+		} else {
+			// 设置 session
+			req.session = sessionData
+		}
+		console.log('req.session:', req.session)
+
+		// 处理 postData
+		return getPostData(req)
+	})
+	.then(postData => {
+		req.body = postData
+
+		const blogResult = handleBlogRouter(req, res)
+			if (blogResult) {
+				blogResult.then(blogData => {
+					if (needSetCookie) {
+						// 操作 cookie
+						res.setHeader('Set-Cookie', `userid=${userId}; path=/; httpOnly; expires=${getCookieExpires()}`)
+					}
+				res.end(
+					JSON.stringify(blogData)
+				)
+			})
+			return
+		}
+		
+		
+		// 处理 user 路由
+		const userResult = handleUserRouter(req, res)
+		if (userResult) {
+			userResult.then(userData => {
+				if (needSetCookie) {
+					// 操作 cookie
+					res.setHeader('Set-Cookie', `userid=${userId}; path=/; httpOnly; expires=${getCookieExpires()}`)
+				
+				}
+				res.end(
+					JSON.stringify(userData)
+				)
+			})
+			return
+		}
+		// 未命中路由，返回404
+		res.writeHead(404, {"Content-type": "text/plain"})
+		res.write("404 Not Found\n")
+		res.end()
+	})
+
+}
+
+module.exports = serverHandle
+```
+
+
+
+### 日志拆分
+
+- 日志内容会慢慢积累，放在一个文件中不好处理
+- 按时间划分日志文件，如 2019-02-10.access.log
+- 实现方式：Linux 的 crontab 命令，即定时任务
+
+#### Crontab 
+
+- 设置定时任务，格式：` ***** command` 
+
+  - ```
+    *分钟*小时*天*月*星期 command脚本命令
+    ```
+
+  - 将 access.log 拷贝并重命名为 2019-02-10.access.log 
+
+  - 清空 access.log 文件，继续积累日志
+
+#### 代码演示
+
+```shell
+# blog-1/src/utils/copy.sh
+
+#!/bin/sh
+cd /Users/wfp/Project/video-tutorial/node-tutorial/code-demo/blog-1
+cp access.log $(date +%Y-%m-%d).access.log
+echo "" > access.log
+```
+
+```sh
+命令行输入：crontab -e 
+输入： *0*** sh /Users/wfp/Project/video-tutorial/node-tutorial/code-demo/blog-1/src/utils/copy.sh
+
+输入：crontab -l 查看所有任务
+```
+
+### 日志分析
+
+- 如针对 access.log 日志，分析 chrome 的占比
+- 日志是按行储存的，一行就是一条日志
+- 使用 node.js 的 readline （基于 stream ，按行读取，效率高）
+
+```js
+const fs = require('fs')
+const path = require('path')
+const readline = require('readline')
+
+// 解析文件名
+const fileName = path.join(__dirname, '../', '../','logs', 'access.log')
+// 创建 readStream 
+const readStream = fs.createReadStream(fileName)
+
+// 创建 readline 对象
+const rl = readline.createInterface({
+	input: readStream
+})
+
+let chromeNum = 0
+let sum = 0
+
+// 逐行读取
+rl.on('line', (lineData) => {
+	if (!lineData) {
+		return
+	}
+	sum++
+
+	const arr = lineData.split('--')
+	if (arr[3] && arr[3].indexOf('Chrome') > 0) {
+		// 累加 chrome 数量
+		chromeNum++
+	}
+
+})
+
+// 监听读取完成
+rl.on('close', () => {
+	console.log('访问总数: ', sum, '\nchrome 数量：', chromeNum, '\nchrome 占比：', chromeNum / sum)
+})
+```
+
+
+
+### 总结
+
+- 日志对 server 的重要性
+- IO 性能瓶颈，使用 stream 提高性能， node.js 中如何操作
+- 使用 Crontab 拆分日志，使用 readline 分析日志内容
+
 ## Web 安全
+
+### 常见安全问题
+
+- SQL 注入：窃取数据库内容
+- XSS攻击：窃取前端的 Cookie 内容
+- 密码加密：保障用户信息安全（重要）
+- Server 端攻击方式非常多，预防手段也非常多
+- 本科只讲常见的、能通过 Web Server ( Node.js ) 层面预防的
+- 有些攻击需要**硬件和服务**来支持（需要 OP 支持），如 DDOS
+
+#### SQL 注入
+
+- 最原始、最简单的攻击，从有了 Web2.0 就有了 SQL 注入攻击
+- 攻击方式：输入一个 SQL 片段，最终拼接成一段攻击代码
+- 预防措施：使用 MySQL　的 escape 函数处理输入数据内容即可
+
+代码演示：
+
+```js
+// 在login用户名输入：' --  或 ‘；delete from users
+// 就可以注释掉后续语句或者删掉这个表
+const sql = `
+		select username, realname from users where username='${username}' and password='${password}'
+	`
+// 解决方法
+// 使用 mysql.escape 函数转义所有数据库输入
+
+// ../src/controller/user.js
+const { exec, escape } = require('../db/mysql.js')
+
+// 登录验证
+const login = (username, password) => {
+	username = escape(username)
+	password = escape(password)
+
+	const sql = `
+		select username, realname from users where username=${username} and password=${password}
+	`
+	return exec(sql).then(rows => {
+		return rows[0] || {}
+	})
+}
+
+module.exports = {
+	login
+}
+```
+
+```js
+//../src/controller/blog.js
+const { exec, escape } = require('../db/mysql')
+
+//博客列表
+const getList = (author, keyword) => {
+	let sql = `select * from blogs where 1=1 `
+	if (author) {
+		author = escape(author)
+		sql += `and author=${author} `
+	} 
+	if (keyword) {
+		keyword = escape('%' + keyword + '%')
+		sql += `and title like ${keyword} `
+	}
+	sql += `order by createtime desc;`
+
+	// console.log(sql)
+	//返回 promise
+	return exec(sql)
+}
+
+//博客详情
+const getDetail = ( id ) => {
+	const sql = `select * from blogs where id=${id}`
+	return exec(sql).then(rows => {
+		return rows[0]})
+	
+}
+
+//新建博客
+const newBlog = (blogData = {}) => {
+	// blogData 是一个博客对象，包含 title conten 属性
+	const title = escape(blogData.title)
+	const content = escape(blogData.content)
+	const author = escape(blogData.author)
+	const createtime = escape(Date.now())
+
+	const sql = `
+	insert into blogs (title, content, createtime, author)
+	values(${title}, ${content}, ${createtime}, ${author})
+	`
+
+	return exec(sql).then(insertData => {
+		return {
+			id: insertData.insertId
+		}
+	})
+}
+
+//更新博客
+const updateBlog = (id, blogData = {}) => {
+	// id 就是要更新的 id
+	// blogData 是一个博客对象，包含 title content 属性
+	const title = escape(blogData.title)
+	const content = escape(blogData.content)
+
+	const sql = `
+		update blogs set title=${title}, content=${content} where id=${id}
+	`
+
+	return exec(sql).then(updateData => {
+		if (updateData.affectedRows > 0) {
+			return true
+		}
+		return false
+	})
+}
+
+//删除博客
+const delBlog = (id, author) => {
+    // author 是 session 中的 username 无需转义 但为了保持SQL语句一致也转义
+	author = escape(author)
+	// id 就是要删除的博客的 idauthor = escape(author)
+	const sql = `delete from blogs where id=${id} and author=${author}`
+
+	return exec(sql).then(delData => {
+		if (delData.affectedRows > 0) {
+			return true
+		}
+		return false
+	})
+}
+
+module.exports = {
+	getList,
+	getDetail,
+	newBlog,
+	updateBlog,
+	delBlog
+}
+```
+
+
+
+#### XSS 攻击
+
+- 前端同学熟知的攻击方式，但 Server 端更应该掌握
+- 攻击方式：在页面展示内容中参杂 JS 代码，以获取网页信息
+- 预防措施：转换生成 JS 的特殊字符 
+
+代码演示：
+
+```javascript
+// 在新建博客 title 或 content 中输入：
+<script>alert(1)</script>
+```
+
+解决方案：引入 xss 库
+
+- 在文件夹 blog-1 中安装 xss： ` npm i xss `
+
+- 代码演示：
+
+  ```js
+  //../src/controller/blog.js
+  const { exec, escape } = require('../db/mysql')
+  const xss = require('xss')
+  
+  //博客列表
+  const getList = (author, keyword) => {
+  	let sql = `select * from blogs where 1=1 `
+  	if (author) {
+  		author = escape(author)
+  		sql += `and author=${author} `
+  	} 
+  	if (keyword) {
+  		keyword = escape('%' + xss(keyword) + '%')
+  		sql += `and title like ${keyword} `
+  	}
+  	sql += `order by createtime desc;`
+  
+  	// console.log(sql)
+  	//返回 promise
+  	return exec(sql)
+  }
+  
+  //博客详情
+  const getDetail = ( id ) => {
+  	const sql = `select * from blogs where id=${id}`
+  	return exec(sql).then(rows => {
+  		return rows[0]})
+  	
+  }
+  
+  //新建博客
+  const newBlog = (blogData = {}) => {
+  	// blogData 是一个博客对象，包含 title conten 属性
+  	const title = escape(xss(blogData.title))
+  	const content = escape(xss(blogData.content))
+  	const author = escape(blogData.author)
+  	const createtime = escape(Date.now())
+  
+  	const sql = `
+  	insert into blogs (title, content, createtime, author)
+  	values(${title}, ${content}, ${createtime}, ${author})
+  	`
+  
+  	return exec(sql).then(insertData => {
+  		return {
+  			id: insertData.insertId
+  		}
+  	})
+  }
+  
+  //更新博客
+  const updateBlog = (id, blogData = {}) => {
+  	// id 就是要更新的 id
+  	// blogData 是一个博客对象，包含 title content 属性
+  	const title = escape(xss(blogData.title))
+  	const content = escape(xss(blogData.content))
+  
+  	const sql = `
+  		update blogs set title=${title}, content=${content} where id=${id}
+  	`
+  
+  	return exec(sql).then(updateData => {
+  		if (updateData.affectedRows > 0) {
+  			return true
+  		}
+  		return false
+  	})
+  }
+  
+  //删除博客
+  const delBlog = (id, author) => {
+  	author = escape(author)
+  	// id 就是要删除的博客的 id 
+  	const sql = `delete from blogs where id=${id} and author=${author}`
+  	console.log(sql)
+  	return exec(sql).then(delData => {
+  		if (delData.affectedRows > 0) {
+  			return true
+  		}
+  		return false
+  	})
+  }
+  
+  module.exports = {
+  	getList,
+  	getDetail,
+  	newBlog,
+  	updateBlog,
+  	delBlog
+  }
+  ```
+
+  
+
+#### 密码加密
+
+- 万一数据库被攻破，避免泄露用户信息
+- 攻击方式：获取用户名和密码，再去尝试登录其它系统
+- 预防措施：密码加密，密文储存
+
+代码演示：
+
+```js
+// ./src/utils/cryp.js
+
+const crypto = require('crypto')
+
+// 密钥
+const SECRT_KEY = 'ZWiep-2947@.?'
+
+// md5 加密
+function md5(content) {
+	let md5 = crypto.createHash('md5')
+	return md5.update(content).digest('hex')
+}
+
+// 加密函数
+function genPassword(password) {
+	const str = `password=${password}&key=${SECRT_KEY}`
+	return md5(str)
+}
+// const result = genPassword('1234')
+// console.log(result)
+
+module.exports = {
+	genPassword
+}
+```
+
+
+
+### 不用框架开发博客总结
+
+#### 主要课程
+
+1. 处理 Http 接口
+2. 连接数据库
+3. 实现登录
+4. 安全
+5. 日志
+6. 上线（最后一起讲）
+
+#### Server 和前端区别 
+
+- 服务稳定性（zui后讲）
+- 内存 CPU （优化 扩展）
+- 日志记录
+- 安全（包括登录验证）
+- 集群和服务拆分
+
+#### 下一步要怎么做
+
+- 不使用框架开发，从零开始，关注底层 API
+- 很琐碎、复杂，没有标准，很容易写乱
+- 适合学习，但不适合应用，接下来开始 Express 和 Koa2
 
 
 
