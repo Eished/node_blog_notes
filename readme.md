@@ -3169,5 +3169,180 @@ module.exports = {
 
 ## Express 框架
 
+- Express 是 Node.js 最常用的 Web Server 框架
+- 什么是框架？
+- 不要以为 Express 框架过时了
+
+目录
+
+- Express 下载、安装和使用，了解 Express 中间件机制
+- 开发接口、连接数据库、实现登录、记录日志
+- 分析 Express 中间件原理
+
+介绍 Express 
+
+- 安装（使用脚手架 Express-grnerator）
+- 初始化代码介绍，处理路由
+- 使用中间件
+
+### 安装 Express
+
+- ` npm install express-generator -g `
+- ` express express-test `
+- ` npm install & npm start `
+
+```
+npm install   //默认安装package.json中的所有模块。
+```
+
+```
+如果只想安装dependencies中的内容，可以使用--dependencies字段：
+npm install --dependencies  
+```
+
+```
+同样只想安装devDependencies中的内容，可以使用--devDependencies字段：
+npm install --devDependencies
+```
+
+```
+这里安装的package.json中所有依赖的模块，都是package.json中指定的版本。如果需要安装最新的版本则要：
+npm update <package_name>  //要安装的模块的名字
+```
+
+```
+npm install -save-dev moduleName 命令:
+安装模块到项目node_modules目录下。
+会将模块依赖写入devDependencies 节点。
+运行 npm install 初始化项目时，会将模块下载到项目目录下。
+运行npm install --production或者注明NODE_ENV变量值为production时，不会自动下载模块到node_modules目录中。
+
+devDependencies 节点下的模块是我们在开发时需要用的，比如项目中使用的 gulp ，压缩css、js的模块。这些模块在我们的项目部署后是不需要的，所以我们可以使用 -save-dev 的形式安装。像 express 这些模块是项目运行必备的，应该安装在 dependencies 节点下，所以我们应该使用 -save 的形式安装。
+```
+
+
+
+### Express 的入口代码
+
+- 介绍 app.js
+  - 各个插件的作用
+  - 思考各个插件的实现原理（结合之前学过的知识）
+  - 处理 GET 和 POST 请求
+
+```js
+var createError = require('http-errors'); // 处理404 生成错误页 
+var express = require('express');
+var path = require('path'); // 路径
+var cookieParser = require('cookie-parser'); // 解析 Cookie
+var logger = require('morgan'); // 记录日志
+
+var indexRouter = require('./routes/index'); // 引用路由
+var usersRouter = require('./routes/users');
+
+var app = express(); // 生成实例
+
+// view engine setup
+app.set('views', path.join(__dirname, 'views')); // 前端
+app.set('view engine', 'jade'); // 前端
+
+app.use(logger('dev')); // 记录日志
+app.use(express.json()); // 等于 getPostData()
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.use('/', indexRouter);
+app.use('/users', usersRouter);
+
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  next(createError(404));
+});
+
+// error handler
+app.use(function(err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get('env') === 'development' ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.render('error');
+});
+
+module.exports = app;
+
+```
+
+
+
+### Express 如何处理路由
+
+### Express 中间件
+
+### Express 开发博客项目
+
+### Express 处理 Session
+
+### Session 连接 Redis
+
+### 登录中间件
+
+### 开发路由
+
+### Morgan
+
+#### 使用 Morgan 写日志
+
+### 中间件原理介绍
+
+#### 中间件代码实现
+
+### 总结
+
+
+
+## Koa2 框架
+
+### 介绍 Koa2
+
+### 介绍路由
+
+### 介绍中间件机制
+
+### 实现 Session
+
+### 开发路由
+
+#### 准备工作
+
+#### 代码演示
+
+### 联调
+
+### 日志
+
+### 中间件原理分析
+
+#### 中间件代码演示
+
+#### 总结
+
+### 开始 PM2 
+
+#### 常用命令
+
+#### 进程守护
+
+#### 常用配置
+
+#### 多进程
+
+#### 总结
+
+## 课程总结
+
+
+
 
 
