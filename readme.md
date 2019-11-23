@@ -3169,6 +3169,8 @@ module.exports = {
 
 ## Express 框架
 
+### Express 介绍
+
 - Express 是 Node.js 最常用的 Web Server 框架
 - 什么是框架？
 - 不要以为 Express 框架过时了
@@ -3185,7 +3187,7 @@ module.exports = {
 - 初始化代码介绍，处理路由
 - 使用中间件
 
-### 安装 Express
+#### 安装 Express
 
 - ` npm install express-generator -g `
 - ` express express-test `
@@ -3220,9 +3222,7 @@ npm install -save-dev moduleName 命令:
 devDependencies 节点下的模块是我们在开发时需要用的，比如项目中使用的 gulp ，压缩css、js的模块。这些模块在我们的项目部署后是不需要的，所以我们可以使用 -save-dev 的形式安装。像 express 这些模块是项目运行必备的，应该安装在 dependencies 节点下，所以我们应该使用 -save 的形式安装。
 ```
 
-
-
-### Express 的入口代码
+#### Express 的入口代码
 
 - 介绍 app.js
   - 各个插件的作用
@@ -3237,7 +3237,7 @@ var cookieParser = require('cookie-parser'); // 解析 Cookie
 var logger = require('morgan'); // 记录日志
 
 var indexRouter = require('./routes/index'); // 引用路由
-var usersRouter = require('./routes/users');
+var usersRouter = require('./routes/users'); // 引用路由
 
 var app = express(); // 生成实例
 
@@ -3247,23 +3247,23 @@ app.set('view engine', 'jade'); // 前端
 
 app.use(logger('dev')); // 记录日志
 app.use(express.json()); // 等于 getPostData()
-app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.urlencoded({ extended: false })); // 等于 getPostData() 解析其它格式数据
+app.use(cookieParser()); //解析 Cookie
+app.use(express.static(path.join(__dirname, 'public'))); // 注册静态文件
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use('/', indexRouter); // 注册路由
+app.use('/users', usersRouter); // 注册路由
 
-// catch 404 and forward to error handler
+// catch 404 and forward to error handler 获取404
 app.use(function(req, res, next) {
   next(createError(404));
 });
 
-// error handler
+// error handler 处理报错
 app.use(function(err, req, res, next) {
   // set locals, only providing error in development
   res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
+  res.locals.error = req.app.get('env') === 'dev' ? err : {};
 
   // render the error page
   res.status(err.status || 500);
@@ -3274,31 +3274,494 @@ module.exports = app;
 
 ```
 
+#### Express 如何处理路由
+
+```js
+// app.js
+const blogRouter = require('./routes/blog');
+const userRouter = require('./routes/user')；
+
+app.use('/api/blog', blogRouter);
+app.use('/api/user', userRouter);
+```
+
+```js
+// ./routes/blog.js
+var express = require('express');
+var router = express.Router();
+ 
+router.get('/list', function(req, res, next) {
+  res.json({
+  	error: 0,
+  	data: [1,2,3]
+  })
+});
+ 
+router.get('/detail', function(req, res, next) {
+  res.json({
+  	error: 0,
+  	data: 'ok!'
+  })
+});
+
+module.exports = router;
+
+```
+
+```js
+// ./routes/user.js
+var express = require('express');
+var router = express.Router();
+ 
+router.post('/login', function(req, res, next) {
+  const {username, password } = req.body
+  res.json({
+  	error: 0,
+  	data: {
+  		username,
+  		password
+  	}
+  })
+});
+
+module.exports = router;
+
+```
+
+#### Express 中间件
+
+- 有很多 app.use
+- 代码中的 next 参数是什么？
+
+```js
+// express-test/app.js
+const express = require('express')
+
+// 本次 http 请求实例
+const app = express()
+
+app.use((req, res, next) => {
+	console.log('请求开始...', req.method, req.url)
+	next()
+})
+
+app.use((req, res, next) => {
+	// 假设在处理 Cookie
+	req.cookie = {
+		userId: 'asd123'
+	}
+	next()
+})
+
+app.use((req, res, next) => {
+	// 假设处理 postData
+	// 异步
+	setTimeout(() => {
+		req.body = {
+			a: 100,
+			b: 200
+		}
+		next()
+	})
+})
+
+app.use('/api', (req, res, next) => {
+	console.log('处理 api 路由')
+	next()
+})
+
+app.get('/api', (req, res, next) => {
+	console.log('get api 路由')
+	next()
+})
+
+app.post('/api', (req, res, next) => {
+	console.log('post api 路由')
+	next()
+})
+
+// 模拟登录验证
+function loginCheck(req, res, next) {
+	console.log('模拟登陆失败')
+	setTimeout(() => {
+		res.json({
+			error: -1,
+			msg: '登陆失败'
+		})
+		// next()
+	})
+}
+
+app.get('/api/get-cookie', loginCheck, (req, res, next) => {
+	console.log('get /api/get-cookie')
+	res.json({
+		error: 0,
+		data: req.cookie
+	})
+})
+
+app.post('/api/get-post-data', (req, res, next) => {
+	console.log('post /api/get-poat-data')
+	res.json({
+		error: 0,
+		data: req.body
+	})
+})
+
+app.use((req, res, next) => {
+	console.log('处理 404')
+	res.json({
+		error: -1,
+		msg: '404'
+	})
+})
+
+app.listen(8000, () => {
+	console.log('server is running on port 8000...')
+})
+```
+
+#### 总结
+
+- 初始化代码中，各个插件的作用
+- Express 如何处理路由
+- Express 中间件
 
 
-### Express 如何处理路由
-
-### Express 中间件
 
 ### Express 开发博客项目
 
-### Express 处理 Session
+- 初始化项目，之前的部分代码可以复用
+- 开发路由，并实现登录
+- 记录日志
 
-### Session 连接 Redis
+#### 初始化开发环境
 
-### 登录中间件
+- 安装插件 mysql xss
+- controller reModel utils conf db 相关代码可以拷贝过来
+- 初始化路由
 
-### 开发路由
+```js
+// ./routes/blog.js
+var express = require('express');
+var router = express.Router();
+const { 
+	getList, 
+	getDetail,
+	newBlog,
+	updateBlog,
+	delBlog
+} = require('../controller/blog')
+const { SuccessModel, ErrorModel } = require('../model/resModel')
+ 
+router.get('/list', function(req, res, next) {
+	let author = req.query.author || ''
+	const keyword = req.query.keyword || ''
+	// const listData = getList(author, keyword)
+	// return new SuccessModel(listData)
 
-### Morgan
+	// if (req.query.isadmin) {
+	// 	// 管理员界面
+	// 	const loginCheckResult = loginCheck(req)
+	// 	if (loginCheckResult) {
+	// 		// 未登录
+	// 		return loginCheckResult
+	// 	}
+	// 	// 强制查询自己的博客
+	// 	author = req.session.username
+	// }
+
+	const result = getList(author, keyword)
+	return result.then(listData => {
+		res.json(
+			new SuccessModel(listData)
+			)
+	})
+});
+ 
+router.get('/detail', function(req, res, next) {
+  res.json({
+  	error: 0,
+  	data: 'ok!'
+  })
+});
+
+module.exports = router;
+
+```
+
+
+
+#### 登录 Express 处理 Session
+
+- 使用 express-session 和 connect-redis ，简单方便
+- req.session 保存登录信息，登录检验做成 express 中间件
+
+安装 session 插件： ` npm i express-session `
+
+
+
+#### 登录 Session 连接 Redis
+
+安装 redis 插件： ` npm i connect-redis `
+
+```js
+// app.js
+const RedisStore = require('connect-redis')(session)
+
+const redisClient = require('./db/redis')
+const sessionStore = new RedisStore({
+	client: redisClient
+})
+app.use(session({
+	secret:'QZlp#31_59!',
+	cookie: {
+		// path: '', //默认配置
+		// httpOnly: true, //默认配置
+		maxAge: 24*60*60*1000
+	},
+	store: sessionStore
+}))
+```
+
+```js
+// redis.js
+const redis = require('redis')
+const { REDIS_CONF } = require('../conf/db')
+
+// 创建客户端
+const redisClient = redis.createClient(REDIS_CONF.port, REDIS_CONF.host)
+redisClient.on('error', err =>{
+	console.error(err)
+})
+
+module.exports = redisClient
+```
+
+```js
+// ./routes/blog.js
+var express = require('express');
+var router = express.Router();
+const { 
+	getList, 
+	getDetail,
+	newBlog,
+	updateBlog,
+	delBlog
+} = require('../controller/blog')
+const { SuccessModel, ErrorModel } = require('../model/resModel')
+ 
+router.get('/list', function(req, res, next) {
+	let author = req.query.author || ''
+	const keyword = req.query.keyword || ''
+	if (req.query.isadmin) {
+	// 	// 管理员界面
+	// 	const loginCheckResult = loginCheck(req)
+	// 	if (loginCheckResult) {
+	// 		// 未登录
+	// 		return loginCheckResult
+	// 	}
+	// 	// 强制查询自己的博客
+		author = req.session.username
+	}
+
+	const result = getList(author, keyword)
+	return result.then(listData => {
+		res.json(
+			new SuccessModel(listData)
+			)
+	})
+});
+ 
+router.get('/detail', function(req, res, next) {
+  res.json({
+  	error: 0,
+  	data: 'ok!'
+  })
+});
+
+module.exports = router;
+
+```
+
+
+
+#### 登录中间件
+
+```js
+// ./middleware/loginCheck.js
+const { ErrorModel } = require('../model/resModel')
+
+module.exports = (req, res, next) => {
+	if (req.session.username) {
+		next()
+		return
+	}
+	res.json(
+		new ErrorModel('未登录')
+	)
+}
+```
+
+
+
+#### 开发路由
+
+```js
+// ./routes/blog.js
+var express = require('express');
+var router = express.Router();
+const { 
+	getList, 
+	getDetail,
+	newBlog,
+	updateBlog,
+	delBlog
+} = require('../controller/blog')
+const { SuccessModel, ErrorModel } = require('../model/resModel')
+const loginCheck = require('../middleware/loginCheck.js')
+ 
+router.get('/list', function(req, res, next) {
+	let author = req.query.author || ''
+	const keyword = req.query.keyword || ''
+	if (req.query.isadmin) {
+		// 管理员界面
+		if (req.session.username == null) {
+			// 未登录
+			res.json(
+				new ErrorModel('未登录')
+			)
+			return
+		}
+		// 强制查询自己的博客
+		author = req.session.username
+	}
+
+	const result = getList(author, keyword)
+	return result.then(listData => {
+		res.json(
+			new SuccessModel(listData)
+			)
+	})
+});
+ 
+router.get('/detail', (req, res, next) => {
+  	const result = getDetail(req.query.id)
+	return result.then(detailData => {
+		res.json(
+			new SuccessModel(detailData)
+		)
+	})
+});
+
+
+router.post('/new', loginCheck, (req, res, next) => {
+	req.body.author = req.session.username
+	const result = newBlog(req.body)
+	return result.then(data => {
+		res.json(
+			new SuccessModel(data)
+		)
+	})
+})
+
+router.post('/update', loginCheck, (req, res, next) => {
+	const result = updateBlog(req.query.id, req.body)
+	return result.then(value => {
+		if (value) {
+			res.json(
+				new SuccessModel()
+			)
+		} 
+		else {
+			res.json(
+				new ErrorModel('更新博客失败!')
+			) 
+		}
+	})
+})
+
+router.post('/del', loginCheck, (req, res, next) => {
+	const author = req.session.username
+	const result = delBlog(req.query.id, author)
+	return result.then(value => {
+		if (value) {
+			res.json(
+				new SuccessModel()
+			) 
+		} else {
+			res.json(
+			new ErrorModel('删除失败！')
+			) 
+		}
+	})
+})
+
+module.exports = router;
+
+```
+
+
 
 #### 使用 Morgan 写日志
 
+- access log 记录，直接使用脚手架推荐的 Morgan
+- 自定义日志使用 console.log 和 console.error 即可
+- 日志拆分、日志内容分析，之前讲过，不再赘述
+
+项目地址： https://github.com/expressjs/morgan 
+
+搜索：Predefined Formats
+
+访问日志 代码演示：
+
+```js
+//  app.js
+var path = require('path'); // 路径
+const fs = require('fs')
+
+const ENV = process.env.NODE_ENV
+if (ENV != 'production') {
+	// 开发环境
+	app.use(logger('dev'))
+} else {
+	const logFileName = path.join(__dirname, 'logs', 'access.log')
+	const writeStream = fs.createWriteStream(logFileName, {
+		flags: 'a'
+	})
+	app.use(logger('combined', {
+		stream: writeStream
+	}))
+}
+// app.use(logger('dev',{
+// 	stream: process.stdout
+// })); // 记录日志
+```
+
+#### 总结
+
+- 写法上的改变，如 req.query, res.json
+- 使用 express-session， connect-redis，登录中间件
+- 使用 Morgan
+
 ### 中间件原理介绍
+
+- 回顾中间件使用
+-  分析如何实现
+  - app.use 用来注册中间件，先收集起来
+  - 遇到 http 请求，根据 path 和 method 判断触发哪些
+  - 实现 next 机制，即上一个通过 next 触发下一个
+- 代码演示
 
 #### 中间件代码实现
 
+
+
 ### 总结
+
+- 使用框架开发的好处（相比之前不使用框架）
+- express 的使用和路由处理，以及操作 session redis 日志等
+- express 中间件的使用和原理
 
 
 
