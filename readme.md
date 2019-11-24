@@ -1,5 +1,3 @@
-
-
 # Node.js搭建博客
 
 ## 开发接口（不用框架）
@@ -3763,17 +3761,83 @@ if (ENV != 'production') {
 - express 的使用和路由处理，以及操作 session redis 日志等
 - express 中间件的使用和原理
 
+#### 下一步
 
+- JS 的异步回调带来了很多问题，Promise 也不能解决所有
+- Node.js 已经支持 async/await 语法，要用起来
+- Ko2 也已经原生支持 async/await 语法，接下来讲解
 
 ## Koa2 框架
 
+- Express 中间件是异步回调，Koa2 原生支持async/await
+- 新开发的框架和系统，都是开始基于 Koa2，例如 egg.js
+- Express 虽然未过时，但是 Koa2 肯定是未来的趋势
+
+目录
+
+- async/await 语法介绍，安装和使用 Koa2
+- 开发接口，连接数据库，实现登录，记录日志
+- 分析 Koa2 中间件原理
+
+### async await 语法介绍
+
+```js
+// async await 获取内容
+async function readFileData() {
+	// 同步写法
+	try{
+	const aData = await getFileContent('a.json')
+	console.log('aData:', aData)
+	const bData = await getFileContent(aData.next)
+	console.log('bData:', bData)
+	const cData = await getFileContent(bData.next)
+	console.log('cData:', cData)
+	} catch (err) {
+		console.log(err)
+	}
+}
+
+readFileData()
+
+async function readAData() {
+	const aData = await getFileContent('a.json')
+	return aData
+}
+async function test() {
+	const aData = await readAData()
+	console.log('aData:', aData)
+}
+test()
+
+// 要点 async await
+// 1. await 后面可以追加 promise 对象，获取 resolve 的值
+// 2. await 必须包裹在 async 函数内
+// 3. async 函数执行返回的也是一个 promise 对象
+// 4. try-catch 截获 promise 中 reject 的值
+
+```
+
 ### 介绍 Koa2
 
-### 介绍路由
+#### 安装 Koa2
 
-### 介绍中间件机制
+- ` npm install koa-generator -g `
+- ` Koa2 koa2-test(初始化目录名) `
+- ` npm install & npm run dev `
 
-### 实现 Session
+#### 介绍 app.js
+
+- 介绍各个插件的作用
+- 思考各个插件的实现原理（结合之前学过的知识）
+- 处理 get 请求和 post 请求
+
+代码演示
+
+#### 介绍路由
+
+#### 介绍中间件机制
+
+#### 实现 Session
 
 ### 开发路由
 
