@@ -1,3 +1,5 @@
+[TOC]
+
 # Node.js搭建博客
 
 ## 开发接口（不用框架）
@@ -2845,7 +2847,7 @@ rl.on('close', () => {
 
 ## Web 安全
 
-### 常见安全问题
+### 常见安全问题和解决方案
 
 - SQL 注入：窃取数据库内容
 - XSS攻击：窃取前端的 Cookie 内容
@@ -3994,35 +3996,742 @@ test()
 
 #### 介绍路由
 
+```js
+// ./blog-koa2/routes/blog.js
+const router = require('koa-router')()
+
+router.prefix('/api/blog')
+
+router.get('/list', function (ctx, next) {
+	const qurey = ctx.qurey
+	ctx.body = {
+		errno: 0,
+		qurey,
+		data: ['这是博客列表']
+	}
+})
+
+router.get('/bar', function (ctx, next) {
+  ctx.body = 'this is a users/bar response'
+})
+
+module.exports = router
+
+```
+
+```js
+// ./blog-koa2/routes/users.js
+const router = require('koa-router')()
+
+router.prefix('/api/users')
+
+router.post('/login', function (ctx, next) {
+	const {username, password} = ctx.request.body
+	ctx.body = {
+		errno: 0,
+		username,
+		password
+	}
+})
+
+router.get('/bar', function (ctx, next) {
+  ctx.body = 'this is a users/bar response'
+})
+
+module.exports = router
+
+```
+
+
+
 #### 介绍中间件机制
+
+- app.use 和 express 一样
+- next 返回 promise ，其它和 express 一样
+
+### 开发接口
 
 #### 实现 Session
 
-### 开发路由
+- 和 express 类似
+- 基于 koa-generic-session 和 koa-redis
+  - ` npm i koa-generic-session koa-redis redis --save `
 
-#### 准备工作
+```js
+// ./blog-koa2/app.js 
+// session 配置
+// 密匙
+app.keys = ['Il34*fs24']
+app.use(session({
+	// 配置 cookie
+	cookie: {
+		path: '/',
+		httpOnly: true,
+		maxAge: 24*60*60*1000
+	},
+	// 配置 redis
+	store: redisStore({
+		all: '127.0.0.1：6379' // 暂时写死
+	})
+}))
+```
 
-#### 代码演示
+```js
+// ./blog-koa2/routes/users.js 
+// 测试 session 
+router.get('/session-test', async function (ctx, next) {
+	if (ctx.session.viewCount == null) {
+		ctx.session.viewCount = 0
+	}
+	ctx.session.viewCount++
+	ctx.body = {
+		errno: 0,
+		viewCount: ctx.session.viewCount
+	}
+})
+```
 
-### 联调
+#### 开发路由
 
-### 日志
+- 复用之前代码， 如 mysql、 登录中间件 、controller、model 等
+- 初始化路由，并开发接口
+- 联调测试
+
+##### 准备工作
+
+- ` npm i mysql `
+- ` npm i xss `
+
+##### 代码演示
+
+```js
+// ./blog-koa2/app.js
+const Koa = require('koa')
+const app = new Koa()
+const views = require('koa-views')
+const json = require('koa-json')
+const onerror = require('koa-onerror')
+const bodyparser = require('koa-bodyparser')
+const logger = require('koa-logger')
+const session = require('koa-generic-session')
+const redisStore = require('koa-redis')
+const { REDIS_CONF } = require('./conf/db.js')
+
+const index = require('./routes/index')
+const user = require('./routes/user.js')
+const blog = require('./routes/blog.js')
+
+// error handler
+onerror(app)
+
+// middlewares
+app.use(bodyparser({
+  enableTypes:['json', 'form', 'text']
+}))
+app.use(json())
+app.use(logger())
+app.use(require('koa-static')(__dirname + '/public'))
+
+app.use(views(__dirname + '/views', {
+  extension: 'pug'
+}))
+
+// logger
+app.use(async (ctx, next) => {
+  const start = new Date()
+  await next()
+  const ms = new Date() - start
+  console.log(`${ctx.method} ${ctx.url} - ${ms}ms`)
+})
+
+// session 配置
+app.keys = ['Il34*fs24']
+app.use(session({
+	// 配置 cookie
+	cookie: {
+		path: '/',
+		httpOnly: true,
+		maxAge: 24*60*60*1000
+	},
+	// 配置 redis
+	store: redisStore({
+		// all: '127.0.0.1：6379' // 暂时写死
+		all: `${REDIS_CONF.host}:${REDIS_CONF.port}`
+	})
+}))
+
+// routes
+app.use(index.routes(), index.allowedMethods())
+app.use(user.routes(), user.allowedMethods())
+app.use(blog.routes(), blog.allowedMethods())
+
+// error-handling
+app.on('error', (err, ctx) => {
+  console.error('server error', err, ctx)
+});
+
+module.exports = app
+
+```
+
+```js
+const router = require('koa-router')()
+const { 
+	getList, 
+	getDetail,
+	newBlog,
+	updateBlog,
+	delBlog
+} = require('../controller/blog')
+const { SuccessModel, ErrorModel } = require('../model/resModel')
+const loginCheck = require('../middleware/loginCheck.js')
+
+router.prefix('/api/blog')
+
+router.get('/list', async function (ctx, next) {
+	let author = ctx.query.author || ''
+	const keyword = ctx.query.keyword || ''
+	if (ctx.query.isadmin) {
+		// 管理员界面
+		console.log('is admin')
+		if (ctx.session.username == null) {
+			// 未登录
+				console.log('is admin but not login')
+			ctx.body = new ErrorModel('未登录')
+			return
+		}
+		// 强制查询自己的博客
+		author = ctx.session.username
+	}
+
+	const listData = await getList(author, keyword) 
+	ctx.body = new SuccessModel(listData)
+
+})
+
+router.get('/detail', async function (ctx, next) {
+	const detailData = await getDetail(ctx.query.id)
+	ctx.body = new SuccessModel(detailData)
+})
+
+router.post('/new', loginCheck, async function (ctx, next) {
+	const body = ctx.request.body
+	body.author = ctx.session.username
+	const data = await newBlog(body)
+	ctx.body = new SuccessModel(data)
+})
+
+router.post('/update', loginCheck, async function (ctx, next) {
+	const value = await updateBlog(ctx.query.id, ctx.request.body)
+	if (value) {
+		ctx.body = new SuccessModel()
+	} else {
+		ctx.body = new ErrorModel('更新博客失败!')
+	}
+})
+
+router.post('/del', loginCheck, async function (ctx, next) {
+	const author = ctx.session.username
+	const value = await delBlog(ctx.query.id, author)
+	if (value) {
+		ctx.body = new SuccessModel()
+	} else {
+		ctx.body = new ErrorModel('删除失败！')
+	}
+})
+
+module.exports = router
+
+```
+
+```js
+// ./blog-koa2/routes/users.js
+const router = require('koa-router')()
+const { login } = require('../controller/user.js')
+const { SuccessModel, ErrorModel } = require('../model/resModel')
+ 
+router.prefix('/api/user')
+
+router.post('/login', async function (ctx, next) {
+	const {username, password} = ctx.request.body
+	const data = await login(username, password)
+	if (data.username) {
+	// // 操作 cookie
+	// res.setHeader('Set-Cookie', `username=${data.username}; path=/; httpOnly; expires=${getCookieExpires()}`)
+		ctx.session.username = data.username
+		ctx.session.realname = data.realname
+		ctx.body = new SuccessModel()
+		return
+	}
+	ctx.body = new ErrorModel('登录失败!')
+})
+
+// router.get('/session-test', async function (ctx, next) {
+// 	if (ctx.session.viewCount == null) {
+// 		ctx.session.viewCount = 0
+// 	}
+// 	ctx.session.viewCount++
+// 	ctx.body = {
+// 		errno: 0,
+// 		viewCount: ctx.session.viewCount
+// 	}
+// })
+
+module.exports = router
+
+```
+
+```js
+// ./blog-koa2/controller/users.js
+const { exec, escape } = require('../db/mysql.js')
+const { genPassword } = require('../utils/cryp.js')
+const xss = require('xss')
+// 登录验证
+const login = async (username, password) => {
+	username = escape(xss(username))
+
+	password = genPassword(password)
+	password = escape(password)
+
+	const sql = `
+		select username, realname from users where username=${username} and password=${password}
+	`
+	const rows = await exec(sql)
+	return rows[0] || {}
+}
+
+module.exports = {
+	login
+}
+```
+
+```js
+//../blog-koa2/controller/blog.js
+const { exec, escape } = require('../db/mysql')
+const xss = require('xss')
+//../blog-koa2/controller/blog.js
+const { exec, escape } = require('../db/mysql')
+const xss = require('xss')
+
+//博客列表
+const getList = async (author, keyword) => {
+	let sql = `select * from blogs where 1=1 `
+	if (author) {
+		author = escape(author)
+		sql += `and author=${author} `
+	} 
+	if (keyword) {
+		keyword = escape('%' + xss(keyword) + '%')
+		sql += `and title like ${keyword} `
+	}
+	sql += `order by createtime desc;`
+	return await exec(sql)
+}
+
+//博客详情
+const getDetail = async ( id ) => {
+	const sql = `select * from blogs where id=${id}`
+	const rows = await exec(sql)
+	return rows[0]
+	
+}
+
+//新建博客
+const newBlog = async (blogData = {}) => {
+	// blogData 是一个博客对象，包含 title conten 属性
+	const title = escape(xss(blogData.title))
+	const content = escape(xss(blogData.content))
+	const author = escape(blogData.author)
+	const createtime = escape(Date.now())
+
+	const sql = `
+	insert into blogs (title, content, createtime, author)
+	values(${title}, ${content}, ${createtime}, ${author})
+	`
+	const insertData = await exec(sql)
+	return {
+		id: insertData.insertId
+	}
+}
+
+//更新博客
+const updateBlog = async (id, blogData = {}) => {
+	// id 就是要更新的 id
+	// blogData 是一个博客对象，包含 title content 属性
+	const title = escape(xss(blogData.title))
+	const content = escape(xss(blogData.content))
+
+	const sql = `
+		update blogs set title=${title}, content=${content} where id=${id}
+	`
+	const updateData = await exec(sql)
+	if (updateData.affectedRows > 0) {
+		return true
+	}
+	return false
+}
+
+//删除博客
+const delBlog = async (id, author) => {
+	author = escape(author)
+	// id 就是要删除的博客的 id 
+	const sql = `delete from blogs where id=${id} and author=${author}`
+	// console.log(sql)
+	const delData = await exec(sql)
+	if (delData.affectedRows > 0) {
+		return true
+	}
+	return false
+}
+
+module.exports = {
+	getList,
+	getDetail,
+	newBlog,
+	updateBlog,
+	delBlog
+}
+//博客列表
+const getList = async (author, keyword) => {
+	let sql = `select * from blogs where 1=1 `
+	if (author) {
+		author = escape(author)
+		sql += `and author=${author} `
+	} 
+	if (keyword) {
+		keyword = escape('%' + xss(keyword) + '%')
+		sql += `and title like ${keyword} `
+	}
+	sql += `order by createtime desc;`
+
+	// console.log(sql)
+	//返回 promise
+	return await exec(sql)
+}
+
+//博客详情
+const getDetail = async ( id ) => {
+	const sql = `select * from blogs where id=${id}`
+	const rows = await exec(sql)
+	return rows[0]
+	
+}
+
+//新建博客
+const newBlog = async (blogData = {}) => {
+	// blogData 是一个博客对象，包含 title conten 属性
+	const title = escape(xss(blogData.title))
+	const content = escape(xss(blogData.content))
+	const author = escape(blogData.author)
+	const createtime = escape(Date.now())
+
+	const sql = `
+	insert into blogs (title, content, createtime, author)
+	values(${title}, ${content}, ${createtime}, ${author})
+	`
+	const insertData = await exec(sql)
+	return {
+		id: insertData.insertId
+	}
+}
+
+//更新博客
+const updateBlog = async (id, blogData = {}) => {
+	// id 就是要更新的 id
+	// blogData 是一个博客对象，包含 title content 属性
+	const title = escape(xss(blogData.title))
+	const content = escape(xss(blogData.content))
+
+	const sql = `
+		update blogs set title=${title}, content=${content} where id=${id}
+	`
+	const updateData = await exec(sql)
+	if (updateData.affectedRows > 0) {
+		return true
+	}
+	return false
+}
+
+//删除博客
+const delBlog = async (id, author) => {
+	author = escape(author)
+	// id 就是要删除的博客的 id 
+	const sql = `delete from blogs where id=${id} and author=${author}`
+	// console.log(sql)
+	const delData = await exec(sql)
+	if (delData.affectedRows > 0) {
+		return true
+	}
+	return false
+}
+
+module.exports = {
+	getList,
+	getDetail,
+	newBlog,
+	updateBlog,
+	delBlog
+}
+```
+
+#### 联调
+
+#### 日志
+
+- access log 记录，使用 morgan
+- 自定义日志使用 console.log 和 console.error
+- 日志文件拆分、日志内存分析，之前讲过，不再赘述
+
+代码演示：
+
+- ` npm i koa-morgan `
+
+```js
+// app.js
+// 记录日志
+const ENV = process.env.NODE_ENV
+if (ENV != 'production') {
+	// 开发环境
+	app.use(morgan('dev'))
+} else {
+	// 线上环境
+	const logFileName = path.join(__dirname, 'logs', 'access.log')
+	const writeStream = fs.createWriteStream(logFileName, {
+		flags: 'a'
+	})
+	app.use(morgan('combined', {
+		stream: writeStream
+	}))
+}
+
+```
+
+
 
 ### 中间件原理分析
 
+- 回顾中间件使用
+- 分析如何实现
+  - app.use 用来注册中间件，先收集起来
+  - 实现 next 机制，即上一个通过 next 触发下一个
+  - 不涉及 method 和 path 的判断
+- 代码演示
+
+洋葱模型：
+
+```js
+const Koa = require('koa');
+const app = new Koa();
+
+// logger
+
+app.use(async (ctx, next) => {
+	console.log('第一层洋葱-开始')
+  await next();
+  const rt = ctx.response.get('X-Response-Time');
+  console.log(`${ctx.method} ${ctx.url} - ${rt}`);
+	console.log('第一层洋葱-结束')
+});
+
+// x-response-time
+
+app.use(async (ctx, next) => {
+	console.log('第二层洋葱-开始')
+  const start = Date.now();
+  await next();
+  const ms = Date.now() - start;
+  ctx.set('X-Response-Time', `${ms}ms`);
+	console.log('第二层洋葱-结束')
+});
+
+// response
+
+app.use(async ctx => {
+	console.log('第三层洋葱-开始')
+  ctx.body = 'Hello World';
+	console.log('第三层洋葱-结束')
+});
+
+app.listen(8000);
+```
+
+
+
 #### 中间件代码演示
+
+```js
+// ./lib/koa2/like-koa2.js
+const http = require('http')
+
+// 组合中间件
+function compose(middlewareList) {
+	return function (ctx) {
+		function dispatch(i) {
+			const fn = middlewareList[i]
+			try {
+				return Promise.resolve(
+					fn(ctx, dispatch.bind(null, i + 1)) // promise
+				)
+			} catch (err) {
+				return Promise.reject(err)
+			}
+		}
+		return dispatch(0)
+	}
+}
+
+class LikeKoa2 {
+	constructor() {
+		this.middlewareList = []
+	}
+
+	use(fn) {
+		this.middlewareList.push(fn)
+		return this
+	}
+
+	createContext(req, res) {
+		const ctx = {
+			req,
+			res
+		}
+		ctx.query = req.query
+		return ctx
+	}
+
+	handleRequest(ctx, fn) {
+		return fn(ctx)
+	}
+
+	callback() {
+		const fn = compose(this.middlewareList) 
+		return (req, res) => {
+			const ctx = this.createContext(req, res)
+			return this.handleRequest(ctx, fn)
+		}
+	}
+
+	listen(...args) {
+		const server = http.createServer(this.callback())
+		server.listen(...args)
+	}
+}
+
+module.exports = LikeKoa2
+```
+
+```js
+// ./lib/koa2/test.js
+const Koa = require('./like-koa2.js');
+const app = new Koa();
+
+// logger
+app.use(async (ctx, next) => {
+	console.log('第一层洋葱-开始')
+  await next();
+  const rt = ctx['X-Response-Time'];
+  console.log(`${ctx.req.method} ${ctx.req.url} - ${rt}`);
+	console.log('第一层洋葱-结束')
+});
+
+// x-response-time
+app.use(async (ctx, next) => {
+	console.log('第二层洋葱-开始')
+  const start = Date.now();
+  await next();
+  const ms = Date.now() - start;
+  ctx['X-Response-Time'] = `${ms}ms`;
+	console.log('第二层洋葱-结束')
+});
+
+// response
+app.use(async ctx => {
+	console.log('第三层洋葱-开始')
+  ctx.res.end ('Hello World')
+	console.log('第三层洋葱-结束')
+});
+
+app.listen(8000);
+```
+
+
 
 #### 总结
 
-### 开始 PM2 
+- 使用 async/await 的好处
+- koa2 的使用，以及如何操作 session redis 日志
+- koa2 中间件的使用和原理
+
+下一步：
+
+- 一直处于开发环境，和前端联调过，但从未上线
+- 如何实现线上服务稳定性？PM2 是什么？
+- nginx 在线上环境扮演了什么重要作用？
+
+## 线上环境
+
+- 服务器稳定性
+- 充分利用服务器硬件资源，以便提高性能
+- 线上日志记录
+
+PM2 功能：
+
+- 进程守护，系统崩溃自动重启
+- 启动多进程，充分利用 CPU 和内存
+- 自带日志记录功能
+
+#### 下载安装
+
+- ` npm install pm2 -g `
+- `pm2 --version `
 
 #### 常用命令
 
+- ` pm2 start <配置或者文件> ` 启动 pm2
+
+- ` pm2 list ` 查看所有 pm2 进程
+- ` pm2 restart <Appname>/<id> `
+- ` pm2 stop <AppName>/<id> `
+- ` pm2 delete <AppName>/<id> `
+- ` pm2 info <AppName>/<id> ` 查看进程详细信息
+- ` pm2 log <AppName>/<id> ` 查看进程日志
+- ` pm2 monit <AppName>/<id> ` 查看 CPU 内存信息
+
+windows 报错无法显示和解决方法：
+
+```cmd
+PS E:\web\node\JStest\JStest\Node\node_blog\pm2-test> pm2 monit
+pm2 : 无法加载文件 C:\Users\kishe\AppData\Roaming\npm\pm2.ps1，因为在此系统上禁止运行脚本。有关详细信息，请参阅 https:/
+go.microsoft.com/fwlink/?LinkID=135170 中的 about_Execution_Policies。
+所在位置 行:1 字符: 1
++ pm2 monit
++ ~~~
+    + CategoryInfo          : SecurityError: (:) []，PSSecurityException
+    + FullyQualifiedErrorId : UnauthorizedAccess
+PS E:\web\node\JStest\JStest\Node\node_blog\pm2-test> set-ExecutionPolicy
+
+位于命令管道位置 1 的 cmdlet Set-ExecutionPolicy
+请为以下参数提供值:
+ExecutionPolicy: RemoteSigned
+
+执行策略更改
+执行策略可帮助你防止执行不信任的脚本。更改执行策略可能会产生安全风险，如 https:/go.microsoft.com/fwlink/?LinkID=135170
+中的 about_Execution_Policies 帮助主题所述。是否要更改执行策略?
+[Y] 是(Y)  [A] 全是(A)  [N] 否(N)  [L] 全否(L)  [S] 暂停(S)  [?] 帮助 (默认值为“N”): y
+PS E:\web\node\JStest\JStest\Node\node_blog\pm2-test> get-ExecutionPolicy
+RemoteSigned
+PS E:\web\node\JStest\JStest\Node\node_blog\pm2-test>
+```
+
+
+
 #### 进程守护
 
-#### 常用配置
+#### 常用配置和日志记录
 
 #### 多进程
+
+#### 关于服务器运维
 
 #### 总结
 
