@@ -4690,12 +4690,92 @@ PM2 功能：
 - ` pm2 start <配置或者文件> ` 启动 pm2
 
 - ` pm2 list ` 查看所有 pm2 进程
+
 - ` pm2 restart <Appname>/<id> `
+
 - ` pm2 stop <AppName>/<id> `
+
 - ` pm2 delete <AppName>/<id> `
+
 - ` pm2 info <AppName>/<id> ` 查看进程详细信息
+
 - ` pm2 log <AppName>/<id> ` 查看进程日志
+
 - ` pm2 monit <AppName>/<id> ` 查看 CPU 内存信息
+
+- ```cmd
+  $ pm2 start app.js              # 启动app.js应用程序
+  
+  $ pm2 start app.js -i 4         # cluster mode 模式启动4个app.js的应用实例     # 4个应用程序会自动进行负载均衡
+  
+  $ pm2 start app.js --name="api" # 启动应用程序并命名为 "api"
+  
+  $ pm2 start app.js --watch      # 当文件变化时自动重启应用
+  
+  $ pm2 start script.sh           # 启动 bash 脚本
+  
+  
+  $ pm2 list                      # 列表 PM2 启动的所有的应用程序
+  
+  $ pm2 monit                     # 显示每个应用程序的CPU和内存占用情况
+  
+  $ pm2 show [app-name]           # 显示应用程序的所有信息
+  
+  
+  $ pm2 logs                      # 显示所有应用程序的日志
+  
+  $ pm2 logs [app-name]           # 显示指定应用程序的日志
+  
+  $ pm2 flush
+  
+  
+  $ pm2 stop all                  # 停止所有的应用程序
+  
+  $ pm2 stop 0                    # 停止 id为 0的指定应用程序
+  
+  $ pm2 restart all               # 重启所有应用
+  
+  $ pm2 reload all                # 重启 cluster mode下的所有应用
+  
+  $ pm2 gracefulReload all        # Graceful reload all apps in cluster mode
+  
+  $ pm2 delete all                # 关闭并删除所有应用
+  
+  $ pm2 delete 0                  # 删除指定应用 id 0
+  
+  $ pm2 scale api 10              # 把名字叫api的应用扩展到10个实例
+  
+  $ pm2 reset [app-name]          # 重置重启数量
+  
+  
+  $ pm2 startup                   # 创建开机自启动命令
+  
+  $ pm2 save                      # 保存当前应用列表
+  
+  $ pm2 resurrect                 # 重新加载保存的应用列表
+  
+  $ pm2 update                    # Save processes, kill PM2 and restore processes
+  
+  $ pm2 generate                  # Generate a sample json configuration file
+  
+  
+  $ pm2 deploy app.json prod setup    # Setup "prod" remote server
+  
+  $ pm2 deploy app.json prod          # Update "prod" remote server
+  
+  $ pm2 deploy app.json prod revert 2 # Revert "prod" remote server by 2
+  
+  
+  $ pm2 module:generate [name]    # Generate sample module with name [name]
+  
+  $ pm2 install pm2-logrotate     # Install module (here a log rotation system)
+  
+  $ pm2 uninstall pm2-logrotate   # Uninstall module
+  
+  $ pm2 publish                   # Increment version, git push and npm publish
+  ```
+
+  
 
 windows 报错无法显示和解决方法：
 
@@ -4727,15 +4807,117 @@ PS E:\web\node\JStest\JStest\Node\node_blog\pm2-test>
 
 #### 进程守护
 
+- node app.js 和 nodemon app.js , 进程崩溃则不能访问
+- pm2 遇到进程崩溃，会自动重启
+
+代码演示：
+
+```js
+// ./pm2-test/app.js
+const http = require('http')
+
+const server = http.createServer((req, res) => {
+	// 模拟日志
+	console.log('cur time', Date.now())
+	// 模拟错误
+	console.log('假装出错了', Date.now())
+
+	// 模拟一个错误
+	if (req.url === '/err') {
+		throw new Error('/err 出错了')
+	}
+
+	res.setHeader('Content-type', 'application/json')
+	res.end(
+		JSON.stringify({
+			errno: 0,
+			msg: 'pm2 test server 2'
+		})
+	)
+})
+
+server.listen(8000)
+console.log('server is runnig on port 8000...')
+```
+
+
+
 #### 常用配置和日志记录
+
+- 新建 PM2 配置文件（包括进程数量，日志文件目录等）
+- 修改 PM2 启动命令，重启
+- 访问 server ，检查日志文件的内容（日志记录是否生效）
+
+配置文件：
+
+```json
+{
+	"apps": {
+		"name": "pm2-test-server",
+		"script": "app.js",
+		"watch": true,
+		"ingnore_watch": [
+			"node_modules",
+			"logs"
+		],
+        "instances": 4, # 多进程
+		"error_file": "logs/err.log",
+		"out_file": "logs/out.log",
+		"log_date_format": "YYYY-MM-DD HH:mm:ss"
+	}
+}
+```
+
+启动方式：
+
+```cmd
+{
+  "name": "pm2-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "cross-env NODE_ENV=dev nodemon app.js",
+    "prd": "cross-env NODE_ENV=production pm2 start pm2.conf.json"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "pm2": "^4.2.0"
+  }
+}
+
+```
+
+
 
 #### 多进程
 
+- 为何使用多进程？
+  - 回顾之前讲 session 时说过， 操作系统限制一个进程的内存
+  - 内存：无法充分利用机器全部内存
+  - CPU：无法充分利用多核CPU
+- 多进程和 redis
+  - 多进程之间，内存无法共享
+  - 多进程访问一个 redis ，实现数据共享
+
 #### 关于服务器运维
+
+- 服务器运维，一般都由专业的 OP 人员和部门来处理
+- 大公司都有自己的运维团队
+- 中小型工期推荐使用一些云服务，如阿里云的 node 平台
 
 #### 总结
 
+- PM2 的核心价值
+- PM2 的常用命令和配置，日志记录
+- 多进程
+
 ## 课程总结
+
+![](./img/20191206.jpg)
 
 
 
