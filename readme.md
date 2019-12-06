@@ -76,7 +76,7 @@ server.listen(300)
 
 #### Node.js 处理路由
 
-- https://github.com/username/xxx 每个斜线后面的唯一标识就是路由
+- ` https://github.com/username/xxx ` 每个斜线后面的唯一标识就是路由
 
 #### Node.js 综合应用
 
@@ -126,7 +126,6 @@ const server = http.createServer((req, res) => {
             )
         })
     }
-
 })
 
 server.listen(300)
@@ -175,7 +174,19 @@ console.log('OK')
   "author": "",
   "license": "ISC"
 }
+```
 
+```js
+// ./bin/www.js 代码
+const http = require('http')
+
+const PORT = 300
+const serverHandle = require('../app')
+const server = http.createServer(serverHandle)
+server.listen(PORT)
+```
+
+```js
 // app.js 代码
 const handleBlogRouter = require('./src/router/blog')
 const handleUserRouter = require('./src/router/user')
@@ -217,15 +228,9 @@ const serverHandle = (req, res) => {
 }
 
 module.exports = serverHandle
-
-// ./bin/www.js 代码
-const http = require('http')
-
-const PORT = 300
-const serverHandle = require('../app')
-const server = http.createServer(serverHandle)
-server.listen(PORT)
 ```
+
+
 
 ### 开发接口
 
@@ -810,7 +815,7 @@ module.exports = {
 - **登录博客**
 
 ``` javascript
-// ./src/router/.user.js 代码
+// ./src/router/user.js 代码
 const { loginCheck } = require('../controller/user') //'路径里面不能有空格'
 const { SuccessModel, ErrorModel } = require('../model/resModel')
 
@@ -850,7 +855,7 @@ module.exports = {
 #### 总结
 
 - node.js 处理 http 请求的常用技能，postman 的使用
-- node,js 开发博客项目的接口（未连接数据库，未登录使用）
+- node.js 开发博客项目的接口（未连接数据库，未登录使用）
 - 为何要将 router 和 controller 分开？
 
 - 路由和  API 区别：
@@ -1192,8 +1197,6 @@ module.exports = {
   				JSON.parse(postData)
   			)
   		})
-  
-  
   	})
   	return promise
   }
@@ -1224,7 +1227,6 @@ module.exports = {
   			return
   		}
   		
-  		
   		//处理 user 路由
   		const userResult = handleUserRouter(req, res)
   		if (userResult) {
@@ -1239,11 +1241,7 @@ module.exports = {
   		res.writeHead(404, {"Content-type": "text/plain"})
   		res.write("404 Not Found\n")
   		res.end()
-  	
   	})
-  	
-  	
-  
   }
   
   module.exports = serverHandle
@@ -1340,7 +1338,7 @@ module.exports = {
   
   
   
-  ///////////////// ./src/router/user.js /////////////////
+  ///////////////// ./src/router/blog.js /////////////////
   
   const { 
   	getList, 
@@ -1416,9 +1414,9 @@ module.exports = {
   
   module.exports = handleBlogRouter
   ```
-
   
-
+  
+  
 - ` api/user/xxx  ` 对接MySQL
 
   ``` javascript
@@ -1503,7 +1501,7 @@ module.exports = {
 
   ``` javascript
   // ./src/router/user.js
-  const { login } = require('../controller/user') //'路径里面不能有空格'
+  const { login } = require('../controller/user') // 路径里面不能有空格
   const { SuccessModel, ErrorModel } = require('../model/resModel')
   
   //获取 cookie 过期时间
@@ -1862,10 +1860,11 @@ module.exports = serverHandle
 
 
 
-- 当前代码 session 代码的问题
-  - session 是 JS 变量，放在 Node.js 进程内存中
-  - 进程内存有限，访问量过大，内存暴增怎么办？
-  - 正式上线是多进程，进程之间内存无法共享
+**当前代码 session 代码的问题**
+
+- session 是 JS 变量，放在 Node.js 进程内存中
+- 进程内存有限，访问量过大，内存暴增怎么办？
+- 正式上线是多进程，进程之间内存无法共享
 
 ### Redis
 
@@ -2181,9 +2180,7 @@ const handleUserRouter = (req, res) => {
 			}
 			return new ErrorModel('login failed!')
 		})
-		
 	}
-
 ```
 
 
@@ -2196,13 +2193,6 @@ const handleUserRouter = (req, res) => {
 const { login } = require('../controller/user') //'路径里面不能有空格'
 const { SuccessModel, ErrorModel } = require('../model/resModel')
 const { set, get } = require('../db/redis')
-
-//获取 cookie 过期时间
-// const getCookieExpires = () => {
-// 	const d = new Date()
-// 	d.setTime(d.getTime() + (24*60*60*1000))
-// 	return d.toGMTString()
-// }
 
 const handleUserRouter = (req, res) => {
 	const method = req.method //GET POST
@@ -2223,7 +2213,6 @@ const handleUserRouter = (req, res) => {
 			}
 			return new ErrorModel('login failed!')
 		})
-		
 	}
 
 	/*// 登录验证测试
@@ -2238,9 +2227,7 @@ const handleUserRouter = (req, res) => {
 		}
 		return Promise.resolve( new ErrorModel('未登录'))
 	}*/
-
 }
-
 
 module.exports = handleUserRouter
 ```
@@ -2248,6 +2235,7 @@ module.exports = handleUserRouter
 
 
 ```javascript 
+// ./src/router/blog.js
 const { 
 	getList, 
 	getDetail,
@@ -2439,7 +2427,7 @@ worker_processes  2;
 
 增加管理页面权限
 
-- ` admin.html` 增加一个 isadmin=1 参数，使用登录者的用户名，后端也需要修改 
+- ` admin.html` 增加一个` isadmin=1` 参数，使用登录者的用户名，后端也需要修改 
 
 - ```javascript
   // 只展示改动代码
@@ -2531,7 +2519,7 @@ fs.readFile(fileName, (err, data) => {
 	return 
 })
 
-const content = '这事新的内容\n'
+const content = '这是新的内容\n'
 const opt = {
 	flag: 'a' // 追加写入，覆盖用 W
 }
@@ -2670,20 +2658,6 @@ const serverHandle = (req, res) => {
 	})
 
 	// 解析 session 
-	// let needSetCookie = false
-	// let userId = req.cookie.userid
-	// if (userId) {
-	// 	if (!SESSION_DATA[userId]) {
-	// 		SESSION_DATA[userId] = {}
-	// 	}
-	// } else {
-	// 	needSetCookie = true
-	// 	userId = `${Date.now()}_${Math.random()}`
-	// 	SESSION_DATA[userId] = {}
-	// }
-	// req.session = SESSION_DATA[userId]
-
-	// 解析 session 
 	let needSetCookie = false
 	let userId = req.cookie.userid
 	if (!userId) {
@@ -2776,7 +2750,7 @@ module.exports = serverHandle
 
 #### 代码演示
 
-```shell
+```sh
 # blog-1/src/utils/copy.sh
 
 #!/bin/sh
@@ -2997,7 +2971,7 @@ module.exports = {
 
 代码演示：
 
-```javascript
+```html
 // 在新建博客 title 或 content 中输入：
 <script>alert(1)</script>
 ```
@@ -3930,7 +3904,7 @@ app.listen(800, () => {
 
 ## Koa2 框架
 
-- Express 中间件是异步回调，Koa2 原生支持async/await
+- Express 中间件是异步回调，Koa2 原生支持 async/await
 - 新开发的框架和系统，都是开始基于 Koa2，例如 egg.js
 - Express 虽然未过时，但是 Koa2 肯定是未来的趋势
 
