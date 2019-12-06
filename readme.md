@@ -4860,7 +4860,7 @@ console.log('server is runnig on port 8000...')
 			"node_modules",
 			"logs"
 		],
-        "instances": 4, # 多进程
+		"instances": 4,
 		"error_file": "logs/err.log",
 		"out_file": "logs/out.log",
 		"log_date_format": "YYYY-MM-DD HH:mm:ss"
