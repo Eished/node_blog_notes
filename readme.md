@@ -294,7 +294,7 @@ module.exports = handleUserRouter
 
 2. 博客列表代码
 
-   ```javascript
+ ```javascript
    // ./app.js 
    const handleBlogRouter = require('./src/router/blog')
    const handleUserRouter = require('./src/router/user')
@@ -348,9 +348,9 @@ module.exports = handleUserRouter
    }
    
    module.exports = serverHandle
-   ```
+ ```
 
-   ```javascript
+ ```javascript
    // ./src/controller/blog.js
    const getList = (author, keyword) => {
    	//先返回假数据(格式正确)
@@ -394,9 +394,9 @@ module.exports = handleUserRouter
    	getList,
    	getDetail
    }
-   ```
+ ```
 
-   ```javascript
+ ```javascript
    // ./src/router/blog.js
    const { getList, getDetail } = require('../controller/blog')
    const { SuccessModel, ErrorModel } = require('../model/resModel')
@@ -445,9 +445,9 @@ module.exports = handleUserRouter
    }
    
    module.exports = handleBlogRouter
-   ```
+ ```
 
-   ```javascript
+ ```javascript
    // ./src/model/resModel.js
    class BaseModel {
    	constructor(data, message) {
@@ -483,7 +483,7 @@ module.exports = handleUserRouter
    	SuccessModel,
    	ErrorModel
    }
-   ```
+ ```
 
 #### 开发路由 博客详情
 
@@ -491,7 +491,7 @@ module.exports = handleUserRouter
 
 - 使用 promise 读取文件，避免 callback-hell
 
-  ```javascript
+```javascript
   const fs =require('fs')
   const path = require('path')
   /*
@@ -556,7 +556,7 @@ module.exports = handleUserRouter
   
   // async await 获取内容
   // koa2 获取内容
-  ```
+```
 
   
 
@@ -892,7 +892,7 @@ MySQL 下载： https://dev.mysql.com/downloads/mysql/
 
 - 解压，打开根目录初始化` my.ini ` 文件， 自行创建在安装根目录下创建` my.ini `
 
-  ``` ini
+``` ini
   [mysqld]
   # 设置3306端口
   port=3306
@@ -918,7 +918,7 @@ MySQL 下载： https://dev.mysql.com/downloads/mysql/
   # 设置mysql客户端连接服务端时默认使用的端口
   port=3306
   default-character-set=utf8mb4
-  ```
+```
 
    配置文件中的路径要和实际存放的路径一致（要手动创建Data文件夹） 
 
@@ -934,7 +934,7 @@ MySQL 下载： https://dev.mysql.com/downloads/mysql/
 
 #### 使用官方客户端管理mysql
 
-- Wrokbench 下载地址：https://dev.mysql.com/downloads/
+- Workbench 下载地址：https://dev.mysql.com/downloads/
 
 - 默认安装，打开后输入之前保存的默认密码登录
 - 弹出修改密码界面，修改密码再登录
@@ -1038,7 +1038,7 @@ DROP COLUMN `stats`;
  insert into blogs (title,content,createtime,author)values('标题A','内容A','1573989043149','zhangsan');
  insert into blogs (title,content,createtime,author)values('标题B','内容B','1573989111301','lisi');
  
--- 查询 blogs 数据 条件查询 倒叙查询 模糊查询
+-- 查询 blogs 数据 条件查询 倒序查询 模糊查询
  select * from blogs;
  select * from blogs where author='lisi' order by createtime desc;
  select * from blogs where title like '%A%' order by createtime desc;
@@ -1164,7 +1164,7 @@ module.exports = {
 
 - ` api/blog/xxx  ` 对接 MySQL
 
-  ``` javascript
+``` javascript
   // app.js 代码
   
   const handleBlogRouter = require('./src/router/blog')
@@ -1272,7 +1272,6 @@ module.exports = {
   	const sql = `select * from blogs where id='${id}'`
   	return exec(sql).then(rows => {
   		return rows[0]})
-  	
   }
   
   //新建博客
@@ -1413,13 +1412,13 @@ module.exports = {
   }
   
   module.exports = handleBlogRouter
-  ```
+```
+
   
-  
-  
+
 - ` api/user/xxx  ` 对接MySQL
 
-  ``` javascript
+``` javascript
   ///////////////// ./src/controller/user.js /////////////////
   
   const { exec } = require('../db/mysql.js')
@@ -1461,7 +1460,7 @@ module.exports = {
   }
   
   module.exports = handleUserRouter
-  ```
+```
 
 
 #### 总结
@@ -1499,7 +1498,7 @@ module.exports = {
   - 修改 Cookie
   - 实现登录验证
 
-  ``` javascript
+``` javascript
   // ./src/router/user.js
   const { login } = require('../controller/user') // 路径里面不能有空格
   const { SuccessModel, ErrorModel } = require('../model/resModel')
@@ -1548,9 +1547,9 @@ module.exports = {
   
   
   module.exports = handleUserRouter
-  ```
+```
 
-  ``` javascript
+``` javascript
   // app.js 代码
   const handleBlogRouter = require('./src/router/blog')
   const handleUserRouter = require('./src/router/user')
@@ -1651,7 +1650,7 @@ module.exports = {
   }
   
   module.exports = serverHandle
-  ```
+```
 
   
 
@@ -1679,10 +1678,10 @@ const getCookieExpires = () => {
 const handleUserRouter = (req, res) => {
 	const method = req.method //GET POST
 
-	// 登录
+	// 登录 GET 方法明文
 	if (method === 'GET' && req.path === '/api/user/login') {
 		// const {username, password } = req.body
-		const { username, password } =req.query
+		const { username, password } = req.query
 		const result = login(username, password)
 		return result.then(data =>{
 			if (data.username) {
@@ -1920,25 +1919,25 @@ keys *
 
 - 标准语法 - 连接数据库并等待执行命令 ：
 
-```
-$ redis-cli -h host -p port -a password
+```shell
+redis-cli -h host -p port -a password
 ```
 
 - 停止 Redis：
 
-```
+```shell
 redis-cli -h 127.0.0.1 -p 6379 shutdown 
 ```
 
 - 将该程序放到Windows服务中：
 
-```
+```shell
 redis-server.exe --service-install redis.conf --loglevel verbose
 ```
 
 - 卸载Windows服务中的Redis服务：
 
-```
+```shell
 redis-server --service-uninstall
 ```
 
@@ -2010,7 +2009,7 @@ TypeError:MISCONF Redis is configured to save RDB snapshots, but is currently no
 
 #### Node.js 连接 Redis
 
- 	**demo 代码：**
+**demo 代码：**
 
 ```  javascript
 const redis = require('redis')
@@ -2038,6 +2037,56 @@ redisClient.get('myname2', (err, val) => {
 
 
 #### Session 存入 Redis
+
+```javascript
+// ../src/db/user.js
+const redis = require('redis')
+const { REDIS_CONF } = require('../conf/db.js')
+
+// 创建客户端
+const redisClient = redis.createClient(REDIS_CONF.port, REDIS_CONF.host)
+redisClient.on('error', err => {
+    console.error(err)
+})
+
+function set(key, val) {
+    if (typeof val === 'object') {
+        val = JSON.stringify(val)
+    }
+    redisClient.set(key, val, redis.print)
+}
+
+function get(key) {
+    const promise = new Promise((resolve, reject) => {
+        redisClient.get(key, (err, val) => {
+            if (err) {
+                reject(err)
+                return
+            }
+            if (val == null) {
+                resolve(null)
+                return
+            }
+
+            try {
+                resolve(
+                    JSON.parse(val)
+                )
+            } catch (ex) {
+                resolve(val)
+            }
+        })
+    })
+    return promise
+}
+
+module.exports = {
+    set,
+    get
+}
+```
+
+
 
 ``` javascript 
 // 仅展示有改动的函数
@@ -2408,18 +2457,18 @@ worker_processes  2;
         #}
 
         location / {
-        proxy_pass http://localhost:301;
+        proxy_pass http://localhost:301; # 前端
         }
 
         location /api/ {
-        proxy_pass http://localhost:300;
-        proxy_set_header Host $host;
+        proxy_pass http://localhost:300; # 后端
+        proxy_set_header Host $host; # 设置请求头-并将头信息传递到服务器端，客户端请求header中的HOST字段
         }
 ```
 
+[nignx活例说明proxy_set_header的几个指标](https://zhuanlan.zhihu.com/p/115731015)
 
-
-注意：变更设置后要重启 Nginx ！
+**注意**：变更设置后要重启 Nginx ！
 
 
 
@@ -2429,56 +2478,55 @@ worker_processes  2;
 
 - ` admin.html` 增加一个` isadmin=1` 参数，使用登录者的用户名，后端也需要修改 
 
-- ```javascript
-  // 只展示改动代码
-  // ../src/router/blog.js
-  	//获取博客列表
-  	if (method === 'GET' && req.path === '/api/blog/list') {
-  		let author = req.query.author || ''
-  		const keyword = req.query.keyword || ''
-  		// const listData = getList(author, keyword)
-  		// return new SuccessModel(listData)
-  
-  		if (req.query.isadmin) {
-  			// 管理员界面
-  			const loginCheckResult = loginCheck(req)
-  			if (loginCheckResult) {
-  				// 未登录
-  				return loginCheckResult
-  			}
-  			// 强制查询自己的博客
-  			author = req.session.username
-  
-  		}
-  
-  		const result = getList(author, keyword)
-  		return result.then(listData => {
-  			return new SuccessModel(listData)
-  		})
-  	}
-  
-  	//删除博客
-  	if (method === 'POST' && req.path === '/api/blog/del') {
-  		// const author ='zhangsan' //作者假数据，等待登录
-  		const loginCheckResult = loginCheck(req)
-  		if (loginCheckResult) {
-  			// 未登录
-  			return loginCheckResult
-  		}
-  		// const author ='zhangsan' //作者假数据，等待登录
-  		// req.body.author = req.session.username
-  		const author = req.session.username
-  		const result = delBlog(id, author)
-  		return result.then(value => {
-  			if (value) {
-  				return new SuccessModel()
-  			}
-  			return new ErrorModel()
-  		})
-  	}
-  ```
+```javascript
+// 只展示改动代码
+// ../src/router/blog.js
 
+	//获取博客列表
+	if (method === 'GET' && req.path === '/api/blog/list') {
+		let author = req.query.author || ''
+		const keyword = req.query.keyword || ''
+		// const listData = getList(author, keyword)
+		// return new SuccessModel(listData)
 
+		if (req.query.isadmin) {
+			// 管理员界面
+			const loginCheckResult = loginCheck(req)
+			if (loginCheckResult) {
+				// 未登录
+				return loginCheckResult
+			}
+			// 强制查询自己的博客
+			author = req.session.username
+
+		}
+
+		const result = getList(author, keyword)
+		return result.then(listData => {
+			return new SuccessModel(listData)
+		})
+	}
+
+	//删除博客
+	if (method === 'POST' && req.path === '/api/blog/del') {
+		// const author ='zhangsan' //作者假数据，等待登录
+		const loginCheckResult = loginCheck(req)
+		if (loginCheckResult) {
+			// 未登录
+			return loginCheckResult
+		}
+		// const author ='zhangsan' //作者假数据，等待登录
+		// req.body.author = req.session.username
+		const author = req.session.username
+		const result = delBlog(id, author)
+		return result.then(value => {
+			if (value) {
+				return new SuccessModel()
+			}
+			return new ErrorModel()
+		})
+	}
+```
 
 #### 总结
 
@@ -2528,10 +2576,7 @@ fs.writeFile(fileName, content, opt, (err) => {
 		console.log(err)
 	}
 })
-
 ```
-
-
 
 ### Stream
 
@@ -2743,10 +2788,10 @@ module.exports = serverHandle
   - ```
     *分钟*小时*天*月*星期 command脚本命令
     ```
+  
+- 将 access.log 拷贝并重命名为 2019-02-10.access.log 
 
-  - 将 access.log 拷贝并重命名为 2019-02-10.access.log 
-
-  - 清空 access.log 文件，继续积累日志
+- 清空 access.log 文件，继续积累日志
 
 #### 代码演示
 
@@ -2982,7 +3027,7 @@ module.exports = {
 
 - 代码演示：
 
-  ```js
+```js
   //../src/controller/blog.js
   const { exec, escape } = require('../db/mysql')
   const xss = require('xss')
@@ -3010,7 +3055,6 @@ module.exports = {
   	const sql = `select * from blogs where id=${id}`
   	return exec(sql).then(rows => {
   		return rows[0]})
-  	
   }
   
   //新建博客
@@ -3073,7 +3117,7 @@ module.exports = {
   	updateBlog,
   	delBlog
   }
-  ```
+```
 
   
 
@@ -3127,7 +3171,7 @@ module.exports = {
 
 #### Server 和前端区别 
 
-- 服务稳定性（zui后讲）
+- 服务稳定性（最后讲）
 - 内存 CPU （优化 扩展）
 - 日志记录
 - 安全（包括登录验证）
@@ -3167,33 +3211,34 @@ module.exports = {
 - ` express express-test `
 - ` npm install & npm start `
 
-```
+```shell
 npm install   //默认安装package.json中的所有模块。
 ```
 
-```
-如果只想安装dependencies中的内容，可以使用--dependencies字段：
+```shell
+#如果只想安装dependencies中的内容，可以使用--dependencies字段：
 npm install --dependencies  
 ```
 
-```
-同样只想安装devDependencies中的内容，可以使用--devDependencies字段：
+```shell
+#同样只想安装devDependencies中的内容，可以使用--devDependencies字段：
 npm install --devDependencies
 ```
 
-```
-这里安装的package.json中所有依赖的模块，都是package.json中指定的版本。如果需要安装最新的版本则要：
+```shell
+#这里安装的package.json中所有依赖的模块，都是package.json中指定的版本。如果需要安装最新的版本则要：
 npm update <package_name>  //要安装的模块的名字
 ```
 
-```
+```shell
 npm install -save-dev moduleName 命令:
-安装模块到项目node_modules目录下。
-会将模块依赖写入devDependencies 节点。
+#安装模块到项目node_modules目录下。
+#会将模块依赖写入devDependencies 节点。
+
 运行 npm install 初始化项目时，会将模块下载到项目目录下。
 运行npm install --production或者注明NODE_ENV变量值为production时，不会自动下载模块到node_modules目录中。
 
-devDependencies 节点下的模块是我们在开发时需要用的，比如项目中使用的 gulp ，压缩css、js的模块。这些模块在我们的项目部署后是不需要的，所以我们可以使用 -save-dev 的形式安装。像 express 这些模块是项目运行必备的，应该安装在 dependencies 节点下，所以我们应该使用 -save 的形式安装。
+#devDependencies 节点下的模块是我们在开发时需要用的，比如项目中使用的 gulp ，压缩css、js的模块。这些模块在我们的项目部署后是不需要的，所以我们可以使用 -save-dev 的形式安装。像 express 这些模块是项目运行必备的，应该安装在 dependencies 节点下，所以我们应该使用 -save 的形式安装。
 ```
 
 #### Express 的入口代码
@@ -3482,7 +3527,7 @@ module.exports = router;
 ```js
 // app.js
 const RedisStore = require('connect-redis')(session)
-
+const session = require('express-session')
 const redisClient = require('./db/redis')
 const sessionStore = new RedisStore({
 	client: redisClient
@@ -4677,92 +4722,92 @@ PM2 功能：
 
 - ` pm2 monit <AppName>/<id> ` 查看 CPU 内存信息
 
-- ```cmd
-  $ pm2 start app.js              # 启动app.js应用程序
-  
-  $ pm2 start app.js -i 4         # cluster mode 模式启动4个app.js的应用实例     # 4个应用程序会自动进行负载均衡
-  
-  $ pm2 start app.js --name="api" # 启动应用程序并命名为 "api"
-  
-  $ pm2 start app.js --watch      # 当文件变化时自动重启应用
-  
-  $ pm2 start script.sh           # 启动 bash 脚本
-  
-  
-  $ pm2 list                      # 列表 PM2 启动的所有的应用程序
-  
-  $ pm2 monit                     # 显示每个应用程序的CPU和内存占用情况
-  
-  $ pm2 show [app-name]           # 显示应用程序的所有信息
-  
-  
-  $ pm2 logs                      # 显示所有应用程序的日志
-  
-  $ pm2 logs [app-name]           # 显示指定应用程序的日志
-  
-  $ pm2 flush
-  
-  
-  $ pm2 stop all                  # 停止所有的应用程序
-  
-  $ pm2 stop 0                    # 停止 id为 0的指定应用程序
-  
-  $ pm2 restart all               # 重启所有应用
-  
-  $ pm2 reload all                # 重启 cluster mode下的所有应用
-  
-  $ pm2 gracefulReload all        # Graceful reload all apps in cluster mode
-  
-  $ pm2 delete all                # 关闭并删除所有应用
-  
-  $ pm2 delete 0                  # 删除指定应用 id 0
-  
-  $ pm2 scale api 10              # 把名字叫api的应用扩展到10个实例
-  
-  $ pm2 reset [app-name]          # 重置重启数量
-  
-  
-  $ pm2 startup                   # 创建开机自启动命令
-  
-  $ pm2 save                      # 保存当前应用列表
-  
-  $ pm2 resurrect                 # 重新加载保存的应用列表
-  
-  $ pm2 update                    # Save processes, kill PM2 and restore processes
-  
-  $ pm2 generate                  # Generate a sample json configuration file
-  
-  
-  $ pm2 deploy app.json prod setup    # Setup "prod" remote server
-  
-  $ pm2 deploy app.json prod          # Update "prod" remote server
-  
-  $ pm2 deploy app.json prod revert 2 # Revert "prod" remote server by 2
-  
-  
-  $ pm2 module:generate [name]    # Generate sample module with name [name]
-  
-  $ pm2 install pm2-logrotate     # Install module (here a log rotation system)
-  
-  $ pm2 uninstall pm2-logrotate   # Uninstall module
-  
-  $ pm2 publish                   # Increment version, git push and npm publish
-  ```
 
-  
+```cmd
+$ pm2 start app.js              # 启动app.js应用程序
+
+$ pm2 start app.js -i 4         # cluster mode 模式启动4个app.js的应用实例     # 4个应用程序会自动进行负载均衡
+
+$ pm2 start app.js --name="api" # 启动应用程序并命名为 "api"
+
+$ pm2 start app.js --watch      # 当文件变化时自动重启应用
+
+$ pm2 start script.sh           # 启动 bash 脚本
+
+
+$ pm2 list                      # 列表 PM2 启动的所有的应用程序
+
+$ pm2 monit                     # 显示每个应用程序的CPU和内存占用情况
+
+$ pm2 show [app-name]           # 显示应用程序的所有信息
+
+
+$ pm2 logs                      # 显示所有应用程序的日志
+
+$ pm2 logs [app-name]           # 显示指定应用程序的日志
+
+$ pm2 flush
+
+
+$ pm2 stop all                  # 停止所有的应用程序
+
+$ pm2 stop 0                    # 停止 id为 0的指定应用程序
+
+$ pm2 restart all               # 重启所有应用
+
+$ pm2 reload all                # 重启 cluster mode下的所有应用
+
+$ pm2 gracefulReload all        # Graceful reload all apps in cluster mode
+
+$ pm2 delete all                # 关闭并删除所有应用
+
+$ pm2 delete 0                  # 删除指定应用 id 0
+
+$ pm2 scale api 10              # 把名字叫api的应用扩展到10个实例
+
+$ pm2 reset [app-name]          # 重置重启数量
+
+
+$ pm2 startup                   # 创建开机自启动命令
+
+$ pm2 save                      # 保存当前应用列表
+
+$ pm2 resurrect                 # 重新加载保存的应用列表
+
+$ pm2 update                    # Save processes, kill PM2 and restore processes
+
+$ pm2 generate                  # Generate a sample json configuration file
+
+
+$ pm2 deploy app.json prod setup    # Setup "prod" remote server
+
+$ pm2 deploy app.json prod          # Update "prod" remote server
+
+$ pm2 deploy app.json prod revert 2 # Revert "prod" remote server by 2
+
+
+$ pm2 module:generate [name]    # Generate sample module with name [name]
+
+$ pm2 install pm2-logrotate     # Install module (here a log rotation system)
+
+$ pm2 uninstall pm2-logrotate   # Uninstall module
+
+$ pm2 publish                   # Increment version, git push and npm publish
+```
 
 windows 报错无法显示和解决方法：
 
 ```cmd
-PS E:\web\node\JStest\JStest\Node\node_blog\pm2-test> pm2 monit
-pm2 : 无法加载文件 C:\Users\kishe\AppData\Roaming\npm\pm2.ps1，因为在此系统上禁止运行脚本。有关详细信息，请参阅 https:/
+PS xx\Node\node_blog\pm2-test> pm2 monit
+pm2 : 无法加载文件 C:\Users\xx\AppData\Roaming\npm\pm2.ps1，因为在此系统上禁止运行脚本。有关详细信息，请参阅 https:/
 go.microsoft.com/fwlink/?LinkID=135170 中的 about_Execution_Policies。
 所在位置 行:1 字符: 1
 + pm2 monit
 + ~~~
     + CategoryInfo          : SecurityError: (:) []，PSSecurityException
     + FullyQualifiedErrorId : UnauthorizedAccess
-PS E:\web\node\JStest\JStest\Node\node_blog\pm2-test> set-ExecutionPolicy
+    
+PS xx\Node\node_blog\pm2-test> set-ExecutionPolicy
 
 位于命令管道位置 1 的 cmdlet Set-ExecutionPolicy
 请为以下参数提供值:
@@ -4772,9 +4817,9 @@ ExecutionPolicy: RemoteSigned
 执行策略可帮助你防止执行不信任的脚本。更改执行策略可能会产生安全风险，如 https:/go.microsoft.com/fwlink/?LinkID=135170
 中的 about_Execution_Policies 帮助主题所述。是否要更改执行策略?
 [Y] 是(Y)  [A] 全是(A)  [N] 否(N)  [L] 全否(L)  [S] 暂停(S)  [?] 帮助 (默认值为“N”): y
-PS E:\web\node\JStest\JStest\Node\node_blog\pm2-test> get-ExecutionPolicy
+PS xx\Node\node_blog\pm2-test> get-ExecutionPolicy
 RemoteSigned
-PS E:\web\node\JStest\JStest\Node\node_blog\pm2-test>
+PS xx\Node\node_blog\pm2-test>
 ```
 
 
